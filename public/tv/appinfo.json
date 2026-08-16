@@ -1,0 +1,20 @@
+{
+  "id": "com.streamtv.app",
+  "version": "1.0.0",
+  "vendor": "StreamTV",
+  "type": "web",
+  "main": "index.html",
+  "title": "StreamTV",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "splashBackground": "splash.png",
+  "bgColor": "#08080a",
+  "iconColor": "#e50914",
+  "uiRevision": 2,
+  "disableBackHistoryAPI": true,
+  "supportTouchMode": "none",
+  "handlesRelaunch": true,
+  "requiredPermissions": ["time.query", "activity.operation"],
+  "allowVideoCapture": false,
+  "allowAudioCapture": false
+}
