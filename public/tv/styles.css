@@ -1,4 +1,4 @@
-/* StreamTV — webOS TV UI (1280x720 base, escala para 1920x1080) */
+/* ErickTV — webOS TV UI (1280x720 base, escala para 1920x1080) */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -275,4 +275,18 @@ body,
 #screen-player {
   width: 100%;
   height: 100%;
+}
+
+
+/* ERICKTV_SEEK_BAR */
+.bar {
+  cursor: pointer;
+}
+
+.bar:hover {
+  transform: scaleY(1.6);
+}
+
+.bar-fill {
+  pointer-events: none;
 }

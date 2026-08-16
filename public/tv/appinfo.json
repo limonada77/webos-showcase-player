@@ -1,10 +1,10 @@
 {
   "id": "com.streamtv.app",
   "version": "1.0.0",
-  "vendor": "StreamTV",
+  "vendor": "ErickTV",
   "type": "web",
   "main": "index.html",
-  "title": "StreamTV",
+  "title": "ErickTV",
   "icon": "icon.png",
   "largeIcon": "largeIcon.png",
   "splashBackground": "splash.png",
@@ -14,7 +14,11 @@
   "disableBackHistoryAPI": true,
   "supportTouchMode": "none",
   "handlesRelaunch": true,
-  "requiredPermissions": ["time.query", "activity.operation"],
+  "requiredPermissions": [
+    "time.query",
+    "activity.operation"
+  ],
   "allowVideoCapture": false,
-  "allowAudioCapture": false
+  "allowAudioCapture": false,
+  "appDescription": "ErickTV - Filmes, séries e TV"
 }

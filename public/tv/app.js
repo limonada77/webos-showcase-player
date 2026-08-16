@@ -1,5 +1,5 @@
 /* =========================================================
-   StreamTV — Xtream Codes player para LG webOS
+   ErickTV — Xtream Codes player para LG webOS
    UI estilo streaming + navegação por controle remoto
    ========================================================= */
 (function () {
@@ -382,7 +382,7 @@
     state.hero = item;
     $("#bb-title").textContent = esc(item.name || item.title);
     $("#bb-kicker").textContent = item.stream_type === "live" ? "Ao vivo agora" : "Em destaque";
-    $("#bb-desc").textContent = esc(item.plot || item.description || "Assista agora em alta qualidade no seu StreamTV.");
+    $("#bb-desc").textContent = esc(item.plot || item.description || "Assista agora em alta qualidade no seu ErickTV.");
     var img = pickImage(item);
     var el = $("#bb-img");
     if (img) { el.src = img; el.style.display = "block"; } else { el.style.display = "none"; }
@@ -625,8 +625,73 @@
 
   function seek(delta) {
     if (!video || !isFinite(video.duration) || video.duration <= 0) return;
-    video.currentTime = Math.max(0, Math.min(video.duration - 1, video.currentTime + delta));
-    showOsd();
+
+    seekToTime(video.currentTime + delta);
+  }
+
+  /*
+   * Vai diretamente para uma posição específica.
+   * Exemplo:
+   * seekToTime(3600) -> 01:00:00
+   */
+  function seekToTime(seconds) {
+    if (!video) return;
+
+    if (
+      !isFinite(seconds) ||
+      !isFinite(video.duration) ||
+      video.duration <= 0
+    ) {
+      return;
+    }
+
+    var target = Math.max(
+      0,
+      Math.min(video.duration - 0.1, seconds)
+    );
+
+    function applySeek() {
+      try {
+        video.currentTime = target;
+
+        /*
+         * Continua reproduzindo dali.
+         */
+        video.play().catch(function () {});
+
+        $("#osd-cur").textContent =
+          fmtTime(target);
+
+        $("#osd-progress").style.width =
+          ((target / video.duration) * 100) + "%";
+
+        showOsd();
+      } catch (e) {}
+    }
+
+    /*
+     * Se a mídia já carregou metadata, pode buscar agora.
+     */
+    if (video.readyState >= 1) {
+      applySeek();
+      return;
+    }
+
+    /*
+     * TVs webOS mais antigas podem precisar esperar
+     * o carregamento antes de alterar currentTime.
+     */
+    video.addEventListener(
+      "loadedmetadata",
+      function onMeta() {
+        video.removeEventListener(
+          "loadedmetadata",
+          onMeta
+        );
+
+        applySeek();
+      }
+    );
   }
 
   function exitPlayer() {
@@ -772,6 +837,46 @@
     video.addEventListener("playing", function () { $("#player-spinner").classList.remove("show"); });
     video.addEventListener("waiting", function () { $("#player-spinner").classList.add("show"); });
     video.addEventListener("error", function () { playError("Erro ao carregar o stream."); });
+    /*
+     * Magic Remote / mouse:
+     * clicar na barra pula diretamente para aquele ponto.
+     */
+    var progressBar =
+      $("#osd-progress").parentNode;
+
+    if (progressBar) {
+      progressBar.addEventListener(
+        "click",
+        function (event) {
+          if (
+            !video ||
+            !isFinite(video.duration) ||
+            video.duration <= 0
+          ) {
+            return;
+          }
+
+          var rect =
+            progressBar.getBoundingClientRect();
+
+          if (!rect.width) return;
+
+          var pct =
+            (event.clientX - rect.left) /
+            rect.width;
+
+          pct = Math.max(
+            0,
+            Math.min(1, pct)
+          );
+
+          seekToTime(
+            video.duration * pct
+          );
+        }
+      );
+    }
+
     video.addEventListener("timeupdate", function () {
       $("#osd-cur").textContent = fmtTime(video.currentTime);
       $("#osd-dur").textContent = isFinite(video.duration) ? fmtTime(video.duration) : "AO VIVO";
