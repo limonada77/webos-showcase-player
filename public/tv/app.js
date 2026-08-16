@@ -44,6 +44,88 @@
     lastFocus: {}
   };
 
+  /* ---------------- Cache rápido ---------------- */
+
+  var CATALOG_CACHE_KEY = "stv_catalog_cache_v1";
+
+  function saveCatalogCache() {
+    try {
+      /*
+       * Cache leve para abrir a HOME instantaneamente.
+       *
+       * Não salvamos listas gigantes inteiras para não
+       * estourar o limite do localStorage das TVs LG.
+       */
+      var cache = {
+        live: {
+          cats: state.live.cats.slice(0, 30),
+          items: state.live.items.slice(0, 80)
+        },
+
+        movies: {
+          cats: state.movies.cats.slice(0, 30),
+          items: state.movies.items.slice(0, 120)
+        },
+
+        series: {
+          cats: state.series.cats.slice(0, 30),
+          items: state.series.items.slice(0, 120)
+        },
+
+        savedAt: Date.now()
+      };
+
+      LS.setItem(
+        CATALOG_CACHE_KEY,
+        JSON.stringify(cache)
+      );
+    } catch (e) {
+      /*
+       * Cache é opcional.
+       * Se a TV tiver pouco espaço, o app continua normal.
+       */
+    }
+  }
+
+  function restoreCatalogCache() {
+    try {
+      var raw = LS.getItem(CATALOG_CACHE_KEY);
+
+      if (!raw) return false;
+
+      var cache = JSON.parse(raw);
+
+      if (!cache) return false;
+
+      state.live.cats =
+        (cache.live && cache.live.cats) || [];
+
+      state.live.items =
+        (cache.live && cache.live.items) || [];
+
+      state.movies.cats =
+        (cache.movies && cache.movies.cats) || [];
+
+      state.movies.items =
+        (cache.movies && cache.movies.items) || [];
+
+      state.series.cats =
+        (cache.series && cache.series.cats) || [];
+
+      state.series.items =
+        (cache.series && cache.series.items) || [];
+
+      return Boolean(
+        state.movies.items.length ||
+        state.series.items.length ||
+        state.live.items.length
+      );
+
+    } catch (e) {
+      return false;
+    }
+  }
+
   /* ---------------- API Xtream ---------------- */
   function apiBase() {
     var p = state.profile;
@@ -195,9 +277,34 @@
       state.movies.items = res[3] || [];
       state.series.items = res[4] || [];
       state.live.items = res[5] || [];
+
+      /*
+       * Guarda uma versão leve para a próxima abertura.
+       */
+      saveCatalogCache();
+
       buildHome();
       show("home");
     });
+  }
+
+  function refreshCatalog() {
+
+    if (!state.profile) {
+      toast("Conta não conectada.");
+      show("login");
+      return;
+    }
+
+    toast("Atualizando conteúdos…");
+
+    loadCatalog()
+      .then(function () {
+        toast("Conteúdos atualizados.");
+      })
+      .catch(function () {
+        toast("Não foi possível atualizar agora.");
+      });
   }
 
   /* ---------------- Home ---------------- */
@@ -581,6 +688,17 @@
   }
 
   function setActiveTab(name) {
+    var refreshButton = $("#btn-refresh");
+
+    if (refreshButton) {
+      refreshButton.addEventListener(
+        "click",
+        function () {
+          refreshCatalog();
+        }
+      );
+    }
+
     $$(".tab").forEach(function (t) { t.classList.toggle("active", t.dataset.tab === name); });
   }
 
@@ -645,14 +763,79 @@
 
     // Sessão salva
     var saved = null;
-    try { saved = JSON.parse(LS.getItem("stv_profile") || "null"); } catch (e) {}
-    if (saved && saved.host) {
+
+    try {
+      saved = JSON.parse(
+        LS.getItem("stv_profile") || "null"
+      );
+    } catch (e) {}
+
+    if (
+      saved &&
+      saved.host &&
+      saved.user &&
+      saved.pass
+    ) {
+
+      /*
+       * Login já realizado anteriormente.
+       *
+       * NÃO mostramos a tela de login novamente.
+       */
+      state.profile = saved;
+
       $("#in-host").value = saved.host;
       $("#in-user").value = saved.user;
       $("#in-pass").value = saved.pass;
-      $("#login-msg").textContent = "Entrando…";
-      doLogin(saved, true).catch(function () {});
+
+      $("#user-name").textContent = saved.user;
+
+      /*
+       * Primeiro tenta abrir imediatamente usando
+       * o catálogo salvo da última sessão.
+       */
+      if (restoreCatalogCache()) {
+        buildHome();
+        show("home");
+        setActiveTab("home");
+      } else {
+
+        /*
+         * Primeira abertura após esta atualização:
+         * ainda não existe cache.
+         *
+         * Mostra Home enquanto busca catálogo,
+         * sem voltar para o formulário de login.
+         */
+        show("home");
+        setActiveTab("home");
+
+        $("#bb-title").textContent =
+          "Carregando catálogo…";
+
+        $("#bb-desc").textContent =
+          "Preparando filmes, séries e canais.";
+      }
+
+      /*
+       * Valida a conta e busca conteúdo novo
+       * silenciosamente.
+       */
+      doLogin(saved, true)
+        .catch(function () {
+          /*
+           * doLogin já volta ao login se a conta
+           * realmente não puder mais ser usada.
+           */
+        });
+
+      return;
     }
+
+    /*
+     * Login aparece somente quando não existe
+     * nenhuma conta salva.
+     */
     show("login");
   }
 
