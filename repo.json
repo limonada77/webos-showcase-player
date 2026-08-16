@@ -1,0 +1,31 @@
+{
+  "paging": {
+    "page": 1,
+    "count": 1,
+    "maxPage": 1,
+    "itemsTotal": 1
+  },
+  "packages": [
+    {
+      "id": "com.streamtv.app",
+      "title": "StreamTV",
+      "shortDescription": "Player para LG webOS",
+      "description": "Aplicativo de mídia para LG webOS.",
+      "iconUri": "https://raw.githubusercontent.com/limonada77/webos-showcase-player/main/public/tv/icon.png",
+      "manifest": {
+        "id": "com.streamtv.app",
+        "version": "1.0.0",
+        "type": "web",
+        "title": "StreamTV",
+        "appDescription": "Aplicativo de mídia para LG webOS.",
+        "sourceUrl": "https://github.com/limonada77/webos-showcase-player",
+        "rootRequired": false,
+        "ipkUrl": "https://raw.githubusercontent.com/limonada77/webos-showcase-player/main/public/downloads/com.streamtv.app_1.0.0_all.ipk",
+        "ipkHash": {
+          "sha256": "5c00312cbe55489de204060fd0c77e3215d4af2edd9eee71d54fa5a1f8d52e74"
+        },
+        "ipkSize": 334294
+      }
+    }
+  ]
+}
