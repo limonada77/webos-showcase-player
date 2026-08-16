@@ -1,0 +1,44 @@
+name: Gerar IPK oficial webOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "public/tv/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar webOS Tools
+        run: npm install -g @webos-tools/cli
+
+      - name: Conferir app
+        run: |
+          cat public/tv/appinfo.json
+          find public/tv -maxdepth 2 -type f | sort
+
+      - name: Gerar IPK
+        run: |
+          mkdir -p artifacts
+          ares-package public/tv -o artifacts
+          ls -lh artifacts
+          sha256sum artifacts/*.ipk
+
+      - name: Upload IPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: StreamTV-webOS-IPK
+          path: artifacts/*.ipk
+          if-no-files-found: error
