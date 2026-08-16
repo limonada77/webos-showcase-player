@@ -564,6 +564,16 @@
 
   function play(item, kind) {
     var url = streamUrl(kind === "movie" ? "movie" : kind === "series" ? "series" : "live", item);
+
+    /*
+     * Guarda exatamente de onde ESTE player foi aberto.
+     * Não reutiliza detalhe antigo.
+     */
+    state.playerOrigin = {
+      screen: state.screen,
+      detail: state.detail || null
+    };
+
     state.playing = { item: item, kind: kind, url: url };
     show("player");
     $("#osd-title").textContent = esc(item.name || item.title || "Reproduzindo");
@@ -620,11 +630,64 @@
   }
 
   function exitPlayer() {
-    if (state.playing && state.playing.kind !== "live" && video && video.currentTime > 30) {
-      saveContinue(state.playing.item, state.playing.kind, video.currentTime);
+    if (
+      state.playing &&
+      state.playing.kind !== "live" &&
+      video &&
+      video.currentTime > 30
+    ) {
+      saveContinue(
+        state.playing.item,
+        state.playing.kind,
+        video.currentTime
+      );
     }
+
     destroyPlayer();
-    show(state.detail ? "detail" : "home");
+
+    var origin = state.playerOrigin;
+
+    /*
+     * Limpa primeiro para nunca reaproveitar
+     * uma origem velha posteriormente.
+     */
+    state.playerOrigin = null;
+    state.playing = null;
+
+    if (origin && origin.screen === "detail" && origin.detail) {
+      state.detail = origin.detail;
+      show("detail");
+      return;
+    }
+
+    if (origin && origin.screen) {
+      /*
+       * Canal aberto diretamente da grade:
+       * volta para a própria grade.
+       */
+      if (origin.screen === "grid") {
+        state.detail = null;
+        show("grid");
+        return;
+      }
+
+      if (origin.screen === "search") {
+        state.detail = null;
+        show("search");
+        return;
+      }
+
+      if (origin.screen === "home") {
+        state.detail = null;
+        show("home");
+        setActiveTab("home");
+        return;
+      }
+    }
+
+    state.detail = null;
+    show("home");
+    setActiveTab("home");
   }
 
   /* ---------------- Controle remoto ---------------- */
