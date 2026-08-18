@@ -492,6 +492,8 @@
   /* ---------------- Detalhe ---------------- */
   function openItem(item, kind) {
     if (kind === "resume") { kind = item._kind || "movie"; }
+    /* De onde este conteúdo foi aberto AGORA (evita voltar para telas antigas). */
+    if (state.screen !== "detail" && state.screen !== "player") state.detailOrigin = state.screen;
     if (kind === "live") { play(item, "live"); return; }
     if (kind === "series") { openSeries(item); return; }
     openMovie(item);
