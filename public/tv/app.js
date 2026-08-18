@@ -726,6 +726,28 @@
       video.src = url;
       video.play().catch(function () {});
     }
+
+    /*
+     * Retoma de onde parou (filmes e episódios).
+     */
+    if (state.resumeAt > 0) {
+      var target = state.resumeAt;
+      var done = false;
+
+      var doResume = function () {
+        if (done) return;
+        if (!isFinite(video.duration) || video.duration <= 0) return;
+        if (target >= video.duration - 20) { done = true; return; }
+        done = true;
+        try { video.currentTime = target; } catch (e) { return; }
+        toast("Retomando de " + fmtTime(target));
+        showOsd();
+      };
+
+      if (video.readyState >= 1) doResume();
+      video.addEventListener("loadedmetadata", doResume);
+      video.addEventListener("canplay", doResume);
+    }
   }
 
   function playError(msg) {
