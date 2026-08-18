@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1280, initial-scale=1" />
+    <title>ErickTV</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- LOGIN -->
+      <section id="screen-login" class="screen active">
+        <div class="login-bg"></div>
+        <div class="login-card">
+          <div class="brand">Erick<span>TV</span></div>
+          <p class="login-sub">Entre com sua conta Xtream Codes</p>
+          <label class="field">
+            <span>Servidor (http://host:porta)</span>
+            <input id="in-host" class="focusable" type="text" placeholder="http://meuservidor.com:8080" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Usuário</span>
+            <input id="in-user" class="focusable" type="text" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Senha</span>
+            <input id="in-pass" class="focusable" type="password" autocomplete="off" />
+          </label>
+          <button id="btn-login" class="btn primary focusable">Entrar</button>
+          <div id="login-msg" class="login-msg"></div>
+        </div>
+      </section>
+
+      <!-- HOME -->
+      <section id="screen-home" class="screen">
+        <header class="topbar">
+          <div class="brand small">Erick<span>TV</span></div>
+          <nav class="tabs">
+            <button class="tab focusable active" data-tab="home">Início</button>
+            <button class="tab focusable" data-tab="live">Ao vivo</button>
+            <button class="tab focusable" data-tab="movies">Filmes</button>
+            <button class="tab focusable" data-tab="series">Séries</button>
+            <button class="tab focusable" data-tab="search">Buscar</button>
+          </nav>
+
+          <button
+            id="btn-refresh"
+            class="btn ghost focusable"
+            type="button"
+            title="Atualizar conteúdos"
+          >
+            ⟳ Atualizar
+          </button>
+
+          <div class="user-chip"><span id="user-name">—</span></div>
+        </header>
+
+        <div id="billboard" class="billboard">
+          <div class="bb-art"><img id="bb-img" alt="" /></div>
+          <div class="bb-fade"></div>
+          <div class="bb-info">
+            <div class="bb-kicker" id="bb-kicker">Em destaque</div>
+            <h1 id="bb-title">Carregando…</h1>
+            <p id="bb-desc"></p>
+            <div class="bb-actions">
+              <button id="bb-play" class="btn play focusable">▶ Assistir</button>
+              <button id="bb-info-btn" class="btn ghost focusable">Mais informações</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="rows" class="rows"></div>
+      </section>
+
+      <!-- GRID (categorias + conteúdo) -->
+      <section id="screen-grid" class="screen">
+        <header class="topbar">
+          <div class="brand small">Erick<span>TV</span></div>
+          <div id="grid-title" class="grid-title">Catálogo</div>
+        </header>
+        <div class="grid-wrap">
+          <aside id="cat-list" class="cats"></aside>
+          <div id="grid-items" class="grid"></div>
+        </div>
+      </section>
+
+      <!-- SEARCH -->
+      <section id="screen-search" class="screen">
+        <header class="topbar">
+          <div class="brand small">Erick<span>TV</span></div>
+          <div class="grid-title">Buscar</div>
+        </header>
+        <div class="search-box">
+          <input id="search-input" class="focusable" type="text" placeholder="Digite o nome do filme, série ou canal" />
+        </div>
+        <div id="search-results" class="grid"></div>
+      </section>
+
+      <!-- DETALHE -->
+      <section id="screen-detail" class="screen">
+        <div class="detail-art"><img id="dt-img" alt="" /><div class="bb-fade"></div></div>
+        <div class="detail-body">
+          <h1 id="dt-title"></h1>
+          <div id="dt-meta" class="dt-meta"></div>
+          <p id="dt-desc" class="dt-desc"></p>
+          <div class="bb-actions">
+            <button id="dt-play" class="btn play focusable">▶ Assistir</button>
+          </div>
+          <div id="dt-seasons" class="seasons"></div>
+          <div id="dt-episodes" class="episodes"></div>
+        </div>
+      </section>
+
+      <!-- PLAYER -->
+      <section id="screen-player" class="screen player">
+        <video id="video" playsinline></video>
+        <div id="player-osd" class="osd">
+          <div class="osd-top">
+            <div id="osd-title" class="osd-title"></div>
+          </div>
+          <div class="osd-bottom">
+            <div class="bar"><div id="osd-progress" class="bar-fill"></div></div>
+            <div class="osd-times"><span id="osd-cur">00:00</span><span id="osd-dur">--:--</span></div>
+            <div class="osd-buttons">
+              <button id="osd-next-ep" class="osd-btn" type="button">⏭ Pular episódio</button>
+              <button id="osd-aspect" class="osd-btn" type="button">⛶ Ajustar imagem</button>
+            </div>
+            <div class="osd-hint">OK: pausar · ◀ ▶: 10s · ▲ ▼: escolher botão · VOLTAR: sair</div>
+          </div>
+        </div>
+        <div id="player-spinner" class="spinner"></div>
+        <div id="player-error" class="player-error"></div>
+      </section>
+
+      <div id="toast" class="toast"></div>
+    </div>
+
+    <script src="lib/hls.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
