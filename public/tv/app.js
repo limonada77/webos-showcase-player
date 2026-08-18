@@ -608,15 +608,69 @@
   /* ---------------- Player ---------------- */
   var video = null, osdTimer = null;
 
+  /* Botões do OSD navegáveis com ▲ ▼ */
+  var osdSel = -1;
+
+  function osdButtons() {
+    return $$("#player-osd .osd-btn").filter(function (b) {
+      return !b.classList.contains("hidden");
+    });
+  }
+
+  function renderOsdSel() {
+    var list = osdButtons();
+    list.forEach(function (b, i) { b.classList.toggle("sel", i === osdSel); });
+  }
+
+  function moveOsdSel(dir) {
+    var list = osdButtons();
+    if (!list.length) return;
+    osdSel = dir === "down" ? osdSel + 1 : osdSel - 1;
+    if (osdSel < -1) osdSel = list.length - 1;
+    if (osdSel > list.length - 1) osdSel = -1;
+    renderOsdSel();
+    showOsd();
+  }
+
   function showOsd() {
     $("#player-osd").classList.add("show");
     clearTimeout(osdTimer);
-    osdTimer = setTimeout(function () { $("#player-osd").classList.remove("show"); }, 4000);
+    osdTimer = setTimeout(function () {
+      $("#player-osd").classList.remove("show");
+      osdSel = -1;
+      renderOsdSel();
+    }, 5000);
+  }
+
+  /* Ajuste de imagem */
+  var ASPECTS = [
+    { fit: "contain", label: "Original" },
+    { fit: "cover", label: "Preencher tela" },
+    { fit: "fill", label: "Esticado" }
+  ];
+  var aspectIdx = 0;
+
+  function applyAspect() {
+    if (video) video.style.objectFit = ASPECTS[aspectIdx].fit;
+  }
+
+  function cycleAspect() {
+    aspectIdx = (aspectIdx + 1) % ASPECTS.length;
+    applyAspect();
+    try { LS.setItem("stv_aspect", String(aspectIdx)); } catch (e) {}
+    toast("Imagem: " + ASPECTS[aspectIdx].label);
+    showOsd();
   }
 
   function destroyPlayer() {
     if (state.hls) { try { state.hls.destroy(); } catch (e) {} state.hls = null; }
     if (video) { try { video.pause(); } catch (e) {} video.removeAttribute("src"); try { video.load(); } catch (e) {} }
+  }
+
+  function persistPosition() {
+    if (!state.playing || !video) return;
+    if (state.playing.kind === "live") return;
+    saveProgress(state.playing.item, state.playing.kind, video.currentTime, video.duration);
   }
 
   function play(item, kind) {
@@ -626,18 +680,25 @@
      * Guarda exatamente de onde ESTE player foi aberto.
      * Não reutiliza detalhe antigo.
      */
-    state.playerOrigin = {
-      screen: state.screen,
-      detail: state.detail || null
-    };
+    if (state.screen !== "player") {
+      state.playerOrigin = {
+        screen: state.screen,
+        detail: state.detail || null
+      };
+    }
 
     state.playing = { item: item, kind: kind, url: url };
+    state.resumeAt = kind === "live" ? 0 : getProgress(item, kind);
     show("player");
     $("#osd-title").textContent = esc(item.name || item.title || "Reproduzindo");
     $("#player-error").classList.remove("show");
     $("#player-spinner").classList.add("show");
+    osdSel = -1;
+    $("#osd-next-ep").classList.toggle("hidden", kind !== "series");
+    renderOsdSel();
     showOsd();
     destroyPlayer();
+    applyAspect();
 
     var isHls = /\.m3u8(\?|$)/i.test(url);
     var canNative = video.canPlayType("application/vnd.apple.mpegurl") !== "" ||
