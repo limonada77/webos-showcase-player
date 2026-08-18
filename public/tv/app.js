@@ -567,23 +567,42 @@
     var eps = (state.seriesInfo && state.seriesInfo.episodes && state.seriesInfo.episodes[k]) || [];
     var box = $("#dt-episodes");
     box.innerHTML = "";
-    eps.forEach(function (ep) {
+    box.scrollTop = 0;
+    state.episodes = eps;
+    eps.forEach(function (ep, idx) {
       var b = document.createElement("button");
       b.className = "ep focusable";
       var info = ep.info || {};
       b.innerHTML = "<b></b><small></small>";
       b.querySelector("b").textContent = "E" + ep.episode_num + " · " + esc(ep.title || "Episódio " + ep.episode_num);
       b.querySelector("small").textContent = esc(info.duration || info.plot || "");
-      b.addEventListener("click", function () {
-        play({
-          stream_id: ep.id,
-          id: ep.id,
-          container_extension: ep.container_extension || "mp4",
-          name: (state.detail.item.name || "") + " · E" + ep.episode_num
-        }, "series");
-      });
+      b.addEventListener("click", function () { playEpisode(idx); });
       box.appendChild(b);
     });
+  }
+
+  function episodeItem(ep) {
+    return {
+      stream_id: ep.id,
+      id: ep.id,
+      container_extension: ep.container_extension || "mp4",
+      name: ((state.detail && state.detail.item && state.detail.item.name) || "") + " · E" + ep.episode_num
+    };
+  }
+
+  function playEpisode(idx) {
+    var eps = state.episodes || [];
+    if (!eps[idx]) return;
+    state.epIndex = idx;
+    play(episodeItem(eps[idx]), "series");
+  }
+
+  function nextEpisode() {
+    var eps = state.episodes || [];
+    var idx = (state.epIndex == null ? -1 : state.epIndex) + 1;
+    if (!eps[idx]) { toast("Este é o último episódio da temporada."); return; }
+    toast("Próximo episódio…");
+    playEpisode(idx);
   }
 
   /* ---------------- Player ---------------- */
