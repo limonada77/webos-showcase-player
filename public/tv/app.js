@@ -734,19 +734,25 @@
       var target = state.resumeAt;
       var done = false;
 
+      var cleanup = function () {
+        video.removeEventListener("loadedmetadata", doResume);
+        video.removeEventListener("canplay", doResume);
+      };
+
       var doResume = function () {
         if (done) return;
         if (!isFinite(video.duration) || video.duration <= 0) return;
-        if (target >= video.duration - 20) { done = true; return; }
         done = true;
+        cleanup();
+        if (target >= video.duration - 20) return;
         try { video.currentTime = target; } catch (e) { return; }
         toast("Retomando de " + fmtTime(target));
         showOsd();
       };
 
-      if (video.readyState >= 1) doResume();
       video.addEventListener("loadedmetadata", doResume);
       video.addEventListener("canplay", doResume);
+      if (video.readyState >= 1) doResume();
     }
   }
 
