@@ -402,6 +402,42 @@
     LS.setItem("stv_continue", JSON.stringify(list.slice(0, 12)));
   }
 
+  /* ------- Posição de reprodução (retomar de onde parou) ------- */
+  var PROGRESS_KEY = "stv_progress_v1";
+
+  function getProgressMap() {
+    try { return JSON.parse(LS.getItem(PROGRESS_KEY) || "{}") || {}; } catch (e) { return {}; }
+  }
+
+  function progressKey(item, kind) {
+    return kind + ":" + String(item.stream_id || item.id || item.name || "");
+  }
+
+  function saveProgress(item, kind, pos, dur) {
+    if (kind === "live" || !item) return;
+    if (!isFinite(pos) || pos < 15) return;
+    var map = getProgressMap();
+    /* Terminou: não guarda posição. */
+    if (isFinite(dur) && dur > 0 && pos > dur - 60) {
+      delete map[progressKey(item, kind)];
+    } else {
+      map[progressKey(item, kind)] = { pos: Math.floor(pos), dur: Math.floor(dur || 0), at: Date.now() };
+    }
+    /* Evita crescer sem limite na TV. */
+    var keys = Object.keys(map);
+    if (keys.length > 200) {
+      keys.sort(function (a, b) { return (map[a].at || 0) - (map[b].at || 0); });
+      keys.slice(0, keys.length - 200).forEach(function (k) { delete map[k]; });
+    }
+    try { LS.setItem(PROGRESS_KEY, JSON.stringify(map)); } catch (e) {}
+  }
+
+  function getProgress(item, kind) {
+    var rec = getProgressMap()[progressKey(item, kind)];
+    return rec && rec.pos > 15 ? rec.pos : 0;
+  }
+
+
   /* ---------------- Grid / categorias ---------------- */
   function openGrid(kind) {
     state.gridKind = kind;
