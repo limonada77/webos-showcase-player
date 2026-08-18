@@ -182,7 +182,7 @@
 
   function ensureVisible(el) {
     // rolagem horizontal dentro de uma trilha
-    var track = el.closest ? el.closest(".row-track, .episodes") : null;
+    var track = el.closest ? el.closest(".row-track") : null;
     if (track) {
       var trackRect = track.parentElement.getBoundingClientRect();
       var r = el.getBoundingClientRect();
@@ -194,13 +194,13 @@
       track.dataset.x = cur;
       track.style.transform = "translateX(" + cur + "px)";
     }
-    // rolagem vertical de containers
-    var scroller = el.closest ? el.closest(".rows, .grid, .cats") : null;
+    // rolagem vertical de containers (inclui a lista de episódios)
+    var scroller = el.closest ? el.closest(".rows, .grid, .cats, .episodes") : null;
     if (scroller) {
       var sr = scroller.getBoundingClientRect();
       var er = el.getBoundingClientRect();
-      if (er.bottom > sr.bottom - 20) scroller.scrollTop += (er.bottom - sr.bottom + 60);
-      else if (er.top < sr.top + 10) scroller.scrollTop -= (sr.top - er.top + 60);
+      if (er.bottom > sr.bottom - 10) scroller.scrollTop += (er.bottom - sr.bottom + 40);
+      else if (er.top < sr.top + 10) scroller.scrollTop -= (sr.top - er.top + 40);
     }
   }
 
