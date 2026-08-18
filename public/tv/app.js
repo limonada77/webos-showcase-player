@@ -841,6 +841,8 @@
   }
 
   function exitPlayer() {
+    persistPosition();
+
     if (
       state.playing &&
       state.playing.kind !== "live" &&
@@ -853,6 +855,7 @@
         video.currentTime
       );
     }
+
 
     destroyPlayer();
 
