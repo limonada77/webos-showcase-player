@@ -182,7 +182,7 @@
 
   function ensureVisible(el) {
     // rolagem horizontal dentro de uma trilha
-    var track = el.closest ? el.closest(".row-track, .episodes") : null;
+    var track = el.closest ? el.closest(".row-track") : null;
     if (track) {
       var trackRect = track.parentElement.getBoundingClientRect();
       var r = el.getBoundingClientRect();
@@ -194,13 +194,13 @@
       track.dataset.x = cur;
       track.style.transform = "translateX(" + cur + "px)";
     }
-    // rolagem vertical de containers
-    var scroller = el.closest ? el.closest(".rows, .grid, .cats") : null;
+    // rolagem vertical de containers (inclui a lista de episódios)
+    var scroller = el.closest ? el.closest(".rows, .grid, .cats, .episodes") : null;
     if (scroller) {
       var sr = scroller.getBoundingClientRect();
       var er = el.getBoundingClientRect();
-      if (er.bottom > sr.bottom - 20) scroller.scrollTop += (er.bottom - sr.bottom + 60);
-      else if (er.top < sr.top + 10) scroller.scrollTop -= (sr.top - er.top + 60);
+      if (er.bottom > sr.bottom - 10) scroller.scrollTop += (er.bottom - sr.bottom + 40);
+      else if (er.top < sr.top + 10) scroller.scrollTop -= (sr.top - er.top + 40);
     }
   }
 
@@ -402,6 +402,42 @@
     LS.setItem("stv_continue", JSON.stringify(list.slice(0, 12)));
   }
 
+  /* ------- Posição de reprodução (retomar de onde parou) ------- */
+  var PROGRESS_KEY = "stv_progress_v1";
+
+  function getProgressMap() {
+    try { return JSON.parse(LS.getItem(PROGRESS_KEY) || "{}") || {}; } catch (e) { return {}; }
+  }
+
+  function progressKey(item, kind) {
+    return kind + ":" + String(item.stream_id || item.id || item.name || "");
+  }
+
+  function saveProgress(item, kind, pos, dur) {
+    if (kind === "live" || !item) return;
+    if (!isFinite(pos) || pos < 15) return;
+    var map = getProgressMap();
+    /* Terminou: não guarda posição. */
+    if (isFinite(dur) && dur > 0 && pos > dur - 60) {
+      delete map[progressKey(item, kind)];
+    } else {
+      map[progressKey(item, kind)] = { pos: Math.floor(pos), dur: Math.floor(dur || 0), at: Date.now() };
+    }
+    /* Evita crescer sem limite na TV. */
+    var keys = Object.keys(map);
+    if (keys.length > 200) {
+      keys.sort(function (a, b) { return (map[a].at || 0) - (map[b].at || 0); });
+      keys.slice(0, keys.length - 200).forEach(function (k) { delete map[k]; });
+    }
+    try { LS.setItem(PROGRESS_KEY, JSON.stringify(map)); } catch (e) {}
+  }
+
+  function getProgress(item, kind) {
+    var rec = getProgressMap()[progressKey(item, kind)];
+    return rec && rec.pos > 15 ? rec.pos : 0;
+  }
+
+
   /* ---------------- Grid / categorias ---------------- */
   function openGrid(kind) {
     state.gridKind = kind;
@@ -456,6 +492,8 @@
   /* ---------------- Detalhe ---------------- */
   function openItem(item, kind) {
     if (kind === "resume") { kind = item._kind || "movie"; }
+    /* De onde este conteúdo foi aberto AGORA (evita voltar para telas antigas). */
+    if (state.screen !== "detail" && state.screen !== "player") state.detailOrigin = state.screen;
     if (kind === "live") { play(item, "live"); return; }
     if (kind === "series") { openSeries(item); return; }
     openMovie(item);
@@ -529,37 +567,110 @@
     var eps = (state.seriesInfo && state.seriesInfo.episodes && state.seriesInfo.episodes[k]) || [];
     var box = $("#dt-episodes");
     box.innerHTML = "";
-    eps.forEach(function (ep) {
+    box.scrollTop = 0;
+    state.episodes = eps;
+    eps.forEach(function (ep, idx) {
       var b = document.createElement("button");
       b.className = "ep focusable";
       var info = ep.info || {};
       b.innerHTML = "<b></b><small></small>";
       b.querySelector("b").textContent = "E" + ep.episode_num + " · " + esc(ep.title || "Episódio " + ep.episode_num);
       b.querySelector("small").textContent = esc(info.duration || info.plot || "");
-      b.addEventListener("click", function () {
-        play({
-          stream_id: ep.id,
-          id: ep.id,
-          container_extension: ep.container_extension || "mp4",
-          name: (state.detail.item.name || "") + " · E" + ep.episode_num
-        }, "series");
-      });
+      b.addEventListener("click", function () { playEpisode(idx); });
       box.appendChild(b);
     });
+  }
+
+  function episodeItem(ep) {
+    return {
+      stream_id: ep.id,
+      id: ep.id,
+      container_extension: ep.container_extension || "mp4",
+      name: ((state.detail && state.detail.item && state.detail.item.name) || "") + " · E" + ep.episode_num
+    };
+  }
+
+  function playEpisode(idx) {
+    var eps = state.episodes || [];
+    if (!eps[idx]) return;
+    state.epIndex = idx;
+    play(episodeItem(eps[idx]), "series");
+  }
+
+  function nextEpisode() {
+    var eps = state.episodes || [];
+    var idx = (state.epIndex == null ? -1 : state.epIndex) + 1;
+    if (!eps[idx]) { toast("Este é o último episódio da temporada."); return; }
+    toast("Próximo episódio…");
+    playEpisode(idx);
   }
 
   /* ---------------- Player ---------------- */
   var video = null, osdTimer = null;
 
+  /* Botões do OSD navegáveis com ▲ ▼ */
+  var osdSel = -1;
+
+  function osdButtons() {
+    return $$("#player-osd .osd-btn").filter(function (b) {
+      return !b.classList.contains("hidden");
+    });
+  }
+
+  function renderOsdSel() {
+    var list = osdButtons();
+    list.forEach(function (b, i) { b.classList.toggle("sel", i === osdSel); });
+  }
+
+  function moveOsdSel(dir) {
+    var list = osdButtons();
+    if (!list.length) return;
+    osdSel = dir === "down" ? osdSel + 1 : osdSel - 1;
+    if (osdSel < -1) osdSel = list.length - 1;
+    if (osdSel > list.length - 1) osdSel = -1;
+    renderOsdSel();
+    showOsd();
+  }
+
   function showOsd() {
     $("#player-osd").classList.add("show");
     clearTimeout(osdTimer);
-    osdTimer = setTimeout(function () { $("#player-osd").classList.remove("show"); }, 4000);
+    osdTimer = setTimeout(function () {
+      $("#player-osd").classList.remove("show");
+      osdSel = -1;
+      renderOsdSel();
+    }, 5000);
+  }
+
+  /* Ajuste de imagem */
+  var ASPECTS = [
+    { fit: "contain", label: "Original" },
+    { fit: "cover", label: "Preencher tela" },
+    { fit: "fill", label: "Esticado" }
+  ];
+  var aspectIdx = 0;
+
+  function applyAspect() {
+    if (video) video.style.objectFit = ASPECTS[aspectIdx].fit;
+  }
+
+  function cycleAspect() {
+    aspectIdx = (aspectIdx + 1) % ASPECTS.length;
+    applyAspect();
+    try { LS.setItem("stv_aspect", String(aspectIdx)); } catch (e) {}
+    toast("Imagem: " + ASPECTS[aspectIdx].label);
+    showOsd();
   }
 
   function destroyPlayer() {
     if (state.hls) { try { state.hls.destroy(); } catch (e) {} state.hls = null; }
     if (video) { try { video.pause(); } catch (e) {} video.removeAttribute("src"); try { video.load(); } catch (e) {} }
+  }
+
+  function persistPosition() {
+    if (!state.playing || !video) return;
+    if (state.playing.kind === "live") return;
+    saveProgress(state.playing.item, state.playing.kind, video.currentTime, video.duration);
   }
 
   function play(item, kind) {
@@ -569,18 +680,25 @@
      * Guarda exatamente de onde ESTE player foi aberto.
      * Não reutiliza detalhe antigo.
      */
-    state.playerOrigin = {
-      screen: state.screen,
-      detail: state.detail || null
-    };
+    if (state.screen !== "player") {
+      state.playerOrigin = {
+        screen: state.screen,
+        detail: state.detail || null
+      };
+    }
 
     state.playing = { item: item, kind: kind, url: url };
+    state.resumeAt = kind === "live" ? 0 : getProgress(item, kind);
     show("player");
     $("#osd-title").textContent = esc(item.name || item.title || "Reproduzindo");
     $("#player-error").classList.remove("show");
     $("#player-spinner").classList.add("show");
+    osdSel = -1;
+    $("#osd-next-ep").classList.toggle("hidden", kind !== "series");
+    renderOsdSel();
     showOsd();
     destroyPlayer();
+    applyAspect();
 
     var isHls = /\.m3u8(\?|$)/i.test(url);
     var canNative = video.canPlayType("application/vnd.apple.mpegurl") !== "" ||
@@ -607,6 +725,34 @@
     } else {
       video.src = url;
       video.play().catch(function () {});
+    }
+
+    /*
+     * Retoma de onde parou (filmes e episódios).
+     */
+    if (state.resumeAt > 0) {
+      var target = state.resumeAt;
+      var done = false;
+
+      var cleanup = function () {
+        video.removeEventListener("loadedmetadata", doResume);
+        video.removeEventListener("canplay", doResume);
+      };
+
+      var doResume = function () {
+        if (done) return;
+        if (!isFinite(video.duration) || video.duration <= 0) return;
+        done = true;
+        cleanup();
+        if (target >= video.duration - 20) return;
+        try { video.currentTime = target; } catch (e) { return; }
+        toast("Retomando de " + fmtTime(target));
+        showOsd();
+      };
+
+      video.addEventListener("loadedmetadata", doResume);
+      video.addEventListener("canplay", doResume);
+      if (video.readyState >= 1) doResume();
     }
   }
 
@@ -695,6 +841,8 @@
   }
 
   function exitPlayer() {
+    persistPosition();
+
     if (
       state.playing &&
       state.playing.kind !== "live" &&
@@ -707,6 +855,7 @@
         video.currentTime
       );
     }
+
 
     destroyPlayer();
 
