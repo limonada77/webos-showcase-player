@@ -963,23 +963,27 @@
       return;
     }
     if (state.screen === "login") return;
-    if (state.screen === "detail") { show(state.prevGrid || "home"); return; }
+
+    if (state.screen === "detail") {
+      /*
+       * Volta apenas para a tela de onde este detalhe foi aberto agora.
+       */
+      var origin = state.detailOrigin;
+      state.detailOrigin = null;
+      state.detail = null;
+      if (origin === "grid" || origin === "search") { show(origin); return; }
+      show("home");
+      setActiveTab("home");
+      return;
+    }
+
+    state.detail = null;
+    state.detailOrigin = null;
     show("home");
     setActiveTab("home");
   }
 
   function setActiveTab(name) {
-    var refreshButton = $("#btn-refresh");
-
-    if (refreshButton) {
-      refreshButton.addEventListener(
-        "click",
-        function () {
-          refreshCatalog();
-        }
-      );
-    }
-
     $$(".tab").forEach(function (t) { t.classList.toggle("active", t.dataset.tab === name); });
   }
 
