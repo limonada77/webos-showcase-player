@@ -194,10 +194,17 @@ input.focused { border-color: #fff; background: #2a2a30; }
 }
 .season.active { background: var(--brand); }
 .season.focused { background: #fff; color: #000; box-shadow: var(--focus); }
+/* Episódios em trilha horizontal (passa pelo lado, sem cortar) */
 .episodes {
-  display: flex; flex-wrap: wrap; align-content: flex-start; gap: 12px;
-  max-height: 34vh; overflow: hidden; padding: 4px 4px 30px;
+  position: relative;
+  overflow: hidden;
+  padding: 4px 0 30px;
 }
+.ep-track {
+  display: flex; flex-wrap: nowrap; gap: 12px;
+  padding: 6px 8px 14px;
+}
+
 .ep {
   flex: 0 0 auto; width: 230px; background: var(--surface); border-radius: var(--radius);
   padding: 12px 14px; text-align: left; border: 0; color: var(--text); cursor: pointer;
