@@ -918,10 +918,14 @@
     if (state.screen === "player") {
       e.preventDefault();
       if (k === KEY.BACK || k === KEY.ESC || k === KEY.BACKSPACE || k === KEY.STOP) return exitPlayer();
-      if (k === KEY.ENTER || k === KEY.PLAY || k === KEY.PAUSE || k === KEY.PLAYPAUSE) return togglePlay();
+      if (k === KEY.UP || k === KEY.DOWN) return moveOsdSel(k === KEY.DOWN ? "down" : "up");
+      if (k === KEY.ENTER || k === KEY.PLAY || k === KEY.PAUSE || k === KEY.PLAYPAUSE) {
+        var sel = osdButtons()[osdSel];
+        if (sel && $("#player-osd").classList.contains("show")) { sel.click(); return; }
+        return togglePlay();
+      }
       if (k === KEY.RIGHT || k === KEY.FF) return seek(10);
       if (k === KEY.LEFT || k === KEY.RW) return seek(-10);
-      if (k === KEY.UP || k === KEY.DOWN) return showOsd();
       return;
     }
 
@@ -959,23 +963,27 @@
       return;
     }
     if (state.screen === "login") return;
-    if (state.screen === "detail") { show(state.prevGrid || "home"); return; }
+
+    if (state.screen === "detail") {
+      /*
+       * Volta apenas para a tela de onde este detalhe foi aberto agora.
+       */
+      var origin = state.detailOrigin;
+      state.detailOrigin = null;
+      state.detail = null;
+      if (origin === "grid" || origin === "search") { show(origin); return; }
+      show("home");
+      setActiveTab("home");
+      return;
+    }
+
+    state.detail = null;
+    state.detailOrigin = null;
     show("home");
     setActiveTab("home");
   }
 
   function setActiveTab(name) {
-    var refreshButton = $("#btn-refresh");
-
-    if (refreshButton) {
-      refreshButton.addEventListener(
-        "click",
-        function () {
-          refreshCatalog();
-        }
-      );
-    }
-
     $$(".tab").forEach(function (t) { t.classList.toggle("active", t.dataset.tab === name); });
   }
 
@@ -1026,12 +1034,38 @@
       );
     }
 
+    var lastSaved = 0;
     video.addEventListener("timeupdate", function () {
       $("#osd-cur").textContent = fmtTime(video.currentTime);
       $("#osd-dur").textContent = isFinite(video.duration) ? fmtTime(video.duration) : "AO VIVO";
       var pct = isFinite(video.duration) && video.duration > 0 ? (video.currentTime / video.duration) * 100 : 100;
       $("#osd-progress").style.width = pct + "%";
+      /* Salva a posição a cada 5s, para retomar depois. */
+      if (Math.abs(video.currentTime - lastSaved) > 5) {
+        lastSaved = video.currentTime;
+        persistPosition();
+      }
     });
+    video.addEventListener("pause", persistPosition);
+    video.addEventListener("ended", function () {
+      persistPosition();
+      if (state.playing && state.playing.kind === "series" && (state.episodes || [])[(state.epIndex || 0) + 1]) {
+        nextEpisode();
+      }
+    });
+
+    /* Restaura o modo de imagem escolhido */
+    var savedAspect = parseInt(LS.getItem("stv_aspect") || "0", 10);
+    if (savedAspect >= 0 && savedAspect < ASPECTS.length) aspectIdx = savedAspect;
+    applyAspect();
+
+    $("#osd-next-ep").addEventListener("click", nextEpisode);
+    $("#osd-aspect").addEventListener("click", cycleAspect);
+
+    var refreshButton = $("#btn-refresh");
+    if (refreshButton) {
+      refreshButton.addEventListener("click", function () { refreshCatalog(); });
+    }
 
     $("#btn-login").addEventListener("click", function () {
       var p = {
