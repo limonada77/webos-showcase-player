@@ -52,7 +52,17 @@
             ⟳ Atualizar
           </button>
 
+          <button
+            id="btn-logout"
+            class="btn ghost focusable"
+            type="button"
+            title="Sair da conta"
+          >
+            ⏻ Sair
+          </button>
+
           <div class="user-chip"><span id="user-name">—</span></div>
+
         </header>
 
         <div id="billboard" class="billboard">
@@ -107,7 +117,7 @@
             <button id="dt-play" class="btn play focusable">▶ Assistir</button>
           </div>
           <div id="dt-seasons" class="seasons"></div>
-          <div id="dt-episodes" class="episodes"></div>
+          <div id="dt-episodes" class="episodes"><div id="dt-ep-track" class="row-track ep-track"></div></div>
         </div>
       </section>
 
@@ -135,7 +145,21 @@
       <div id="toast" class="toast"></div>
     </div>
 
+    <script>
+      /* Evita o "flash" da tela de login quando já existe conta salva. */
+      (function () {
+        try {
+          if (window.localStorage.getItem("stv_profile")) {
+            var l = document.getElementById("screen-login");
+            var h = document.getElementById("screen-home");
+            if (l) l.className = l.className.replace(" active", "");
+            if (h && h.className.indexOf("active") === -1) h.className += " active";
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script src="lib/hls.min.js"></script>
     <script src="app.js"></script>
+
   </body>
 </html>
