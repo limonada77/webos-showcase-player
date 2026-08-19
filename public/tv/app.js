@@ -918,10 +918,14 @@
     if (state.screen === "player") {
       e.preventDefault();
       if (k === KEY.BACK || k === KEY.ESC || k === KEY.BACKSPACE || k === KEY.STOP) return exitPlayer();
-      if (k === KEY.ENTER || k === KEY.PLAY || k === KEY.PAUSE || k === KEY.PLAYPAUSE) return togglePlay();
+      if (k === KEY.UP || k === KEY.DOWN) return moveOsdSel(k === KEY.DOWN ? "down" : "up");
+      if (k === KEY.ENTER || k === KEY.PLAY || k === KEY.PAUSE || k === KEY.PLAYPAUSE) {
+        var sel = osdButtons()[osdSel];
+        if (sel && $("#player-osd").classList.contains("show")) { sel.click(); return; }
+        return togglePlay();
+      }
       if (k === KEY.RIGHT || k === KEY.FF) return seek(10);
       if (k === KEY.LEFT || k === KEY.RW) return seek(-10);
-      if (k === KEY.UP || k === KEY.DOWN) return showOsd();
       return;
     }
 
