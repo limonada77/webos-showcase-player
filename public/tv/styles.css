@@ -323,3 +323,21 @@ body,
 .bar-fill {
   pointer-events: none;
 }
+
+/* Botão Sair, mesmo estilo transparente do Atualizar */
+#btn-logout {
+  background: transparent;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 600;
+  height: auto;
+  padding: 8px 16px;
+  border-radius: 40px;
+}
+#btn-logout.focused { background: #fff; color: #000; }
+
+/* Modos de ajuste de imagem do player */
+#video.fit-contain { object-fit: contain !important; transform: none !important; }
+#video.fit-cover { object-fit: cover !important; transform: none !important; }
+#video.fit-fill { object-fit: fill !important; transform: none !important; }
+#video.fit-zoom { object-fit: contain !important; transform: scale(1.18) !important; }
