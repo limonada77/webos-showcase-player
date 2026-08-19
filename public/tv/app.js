@@ -1034,12 +1034,38 @@
       );
     }
 
+    var lastSaved = 0;
     video.addEventListener("timeupdate", function () {
       $("#osd-cur").textContent = fmtTime(video.currentTime);
       $("#osd-dur").textContent = isFinite(video.duration) ? fmtTime(video.duration) : "AO VIVO";
       var pct = isFinite(video.duration) && video.duration > 0 ? (video.currentTime / video.duration) * 100 : 100;
       $("#osd-progress").style.width = pct + "%";
+      /* Salva a posição a cada 5s, para retomar depois. */
+      if (Math.abs(video.currentTime - lastSaved) > 5) {
+        lastSaved = video.currentTime;
+        persistPosition();
+      }
     });
+    video.addEventListener("pause", persistPosition);
+    video.addEventListener("ended", function () {
+      persistPosition();
+      if (state.playing && state.playing.kind === "series" && (state.episodes || [])[(state.epIndex || 0) + 1]) {
+        nextEpisode();
+      }
+    });
+
+    /* Restaura o modo de imagem escolhido */
+    var savedAspect = parseInt(LS.getItem("stv_aspect") || "0", 10);
+    if (savedAspect >= 0 && savedAspect < ASPECTS.length) aspectIdx = savedAspect;
+    applyAspect();
+
+    $("#osd-next-ep").addEventListener("click", nextEpisode);
+    $("#osd-aspect").addEventListener("click", cycleAspect);
+
+    var refreshButton = $("#btn-refresh");
+    if (refreshButton) {
+      refreshButton.addEventListener("click", function () { refreshCatalog(); });
+    }
 
     $("#btn-login").addEventListener("click", function () {
       var p = {
