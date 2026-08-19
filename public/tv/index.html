@@ -145,7 +145,21 @@
       <div id="toast" class="toast"></div>
     </div>
 
+    <script>
+      /* Evita o "flash" da tela de login quando já existe conta salva. */
+      (function () {
+        try {
+          if (window.localStorage.getItem("stv_profile")) {
+            var l = document.getElementById("screen-login");
+            var h = document.getElementById("screen-home");
+            if (l) l.className = l.className.replace(" active", "");
+            if (h && h.className.indexOf("active") === -1) h.className += " active";
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script src="lib/hls.min.js"></script>
     <script src="app.js"></script>
+
   </body>
 </html>
