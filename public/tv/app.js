@@ -201,6 +201,7 @@
       var er = el.getBoundingClientRect();
       if (er.bottom > sr.bottom - 10) scroller.scrollTop += (er.bottom - sr.bottom + 40);
       else if (er.top < sr.top + 10) scroller.scrollTop -= (sr.top - er.top + 40);
+      if (scroller.id === "grid-items") maybeLoadMoreGrid(scroller);
     }
   }
 
