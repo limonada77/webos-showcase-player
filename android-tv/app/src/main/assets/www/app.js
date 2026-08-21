@@ -201,6 +201,7 @@
       var er = el.getBoundingClientRect();
       if (er.bottom > sr.bottom - 10) scroller.scrollTop += (er.bottom - sr.bottom + 40);
       else if (er.top < sr.top + 10) scroller.scrollTop -= (sr.top - er.top + 40);
+      if (scroller.id === "grid-items") maybeLoadMoreGrid(scroller);
     }
   }
 
@@ -249,8 +250,11 @@
       if (!data || !data.user_info || String(data.user_info.auth) !== "1") {
         throw new Error("Usuário ou senha inválidos");
       }
+      state.userInfo = data.user_info;
+      state.serverInfo = data.server_info || null;
       LS.setItem("stv_profile", JSON.stringify(profile));
       $("#user-name").textContent = profile.user;
+      renderProfile();
       return loadCatalog();
     }).catch(function (e) {
       state.profile = null;
@@ -389,9 +393,21 @@
     state.heroKind = item.series_id ? "series" : (item.stream_type === "live" ? "live" : "movie");
   }
 
+  /* ------------------------------------------------------------
+     Histórico APENAS da sessão atual (memória).
+     Ao sair/entrar novamente, o histórico começa vazio.
+     ------------------------------------------------------------ */
+  var sessionHistory = { cont: [], progress: {} };
+
+  function clearHistory() {
+    sessionHistory = { cont: [], progress: {} };
+    try { LS.removeItem("stv_continue"); } catch (e) {}
+    try { LS.removeItem("stv_progress_v1"); } catch (e) {}
+  }
+
   /* ---------------- Continuar assistindo ---------------- */
   function getContinue() {
-    try { return JSON.parse(LS.getItem("stv_continue") || "[]"); } catch (e) { return []; }
+    return sessionHistory.cont.slice(0);
   }
   function saveContinue(item, kind, pos) {
     if (kind === "live") return;
@@ -399,14 +415,12 @@
     var rec = JSON.parse(JSON.stringify(item));
     rec._kind = kind; rec._pos = pos || 0;
     list.unshift(rec);
-    LS.setItem("stv_continue", JSON.stringify(list.slice(0, 12)));
+    sessionHistory.cont = list.slice(0, 12);
   }
 
   /* ------- Posição de reprodução (retomar de onde parou) ------- */
-  var PROGRESS_KEY = "stv_progress_v1";
-
   function getProgressMap() {
-    try { return JSON.parse(LS.getItem(PROGRESS_KEY) || "{}") || {}; } catch (e) { return {}; }
+    return sessionHistory.progress;
   }
 
   function progressKey(item, kind) {
@@ -423,13 +437,6 @@
     } else {
       map[progressKey(item, kind)] = { pos: Math.floor(pos), dur: Math.floor(dur || 0), at: Date.now() };
     }
-    /* Evita crescer sem limite na TV. */
-    var keys = Object.keys(map);
-    if (keys.length > 200) {
-      keys.sort(function (a, b) { return (map[a].at || 0) - (map[b].at || 0); });
-      keys.slice(0, keys.length - 200).forEach(function (k) { delete map[k]; });
-    }
-    try { LS.setItem(PROGRESS_KEY, JSON.stringify(map)); } catch (e) {}
   }
 
   function getProgress(item, kind) {
@@ -437,6 +444,43 @@
     return rec && rec.pos > 15 ? rec.pos : 0;
   }
 
+
+  /* ---------------- Perfil ---------------- */
+  function fmtDate(ts) {
+    if (!ts) return "Sem vencimento";
+    var n = parseInt(ts, 10);
+    if (!isFinite(n) || n <= 0) return "Sem vencimento";
+    var d = new Date(n * 1000);
+    var p = function (x) { return x < 10 ? "0" + x : "" + x; };
+    return p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear();
+  }
+
+  function renderProfile() {
+    var u = state.userInfo || {};
+    var p = state.profile || {};
+    var name = p.user || u.username || "—";
+    $("#pf-user").textContent = name;
+    $("#pf-username").textContent = name;
+    $("#pf-avatar").textContent = (name[0] || "E").toUpperCase();
+    $("#pf-exp").textContent = fmtDate(u.exp_date);
+    var days = "—";
+    if (u.exp_date) {
+      var diff = Math.ceil((parseInt(u.exp_date, 10) * 1000 - Date.now()) / 86400000);
+      days = diff > 0 ? diff + " dia(s)" : "Vencida";
+    } else if (u.exp_date === null) {
+      days = "Ilimitado";
+    }
+    $("#pf-days").textContent = days;
+    $("#pf-status").textContent = u.status ? String(u.status) : (state.profile ? "Ativa" : "—");
+    $("#pf-conn").textContent = (u.active_cons != null ? u.active_cons : "0") + " / " + (u.max_connections != null ? u.max_connections : "—");
+    $("#pf-host").textContent = p.host || "—";
+  }
+
+  function openProfile() {
+    renderProfile();
+    setActiveTab("profile");
+    show("profile");
+  }
 
   /* ---------------- Grid / categorias ---------------- */
   function openGrid(kind) {
@@ -462,17 +506,43 @@
     if (btn) btn.classList.add("active");
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
     var items = String(cat.category_id) === "__all" ? data.items : byCategory(data.items, cat.category_id);
-    renderGrid($("#grid-items"), items.slice(0, 300), kind);
+    /* Categoria completa: todos os itens, carregados aos poucos ao rolar. */
+    renderGrid($("#grid-items"), items, kind);
   }
+
+  /* Renderização progressiva: mostra TODOS os itens da categoria,
+     mas em blocos, para a TV não travar com listas de milhares. */
+  var GRID_CHUNK = 90;
+  var gridPending = null;
 
   function renderGrid(box, items, kind) {
     box.innerHTML = "";
     box.scrollTop = 0;
-    if (!items.length) {
+    gridPending = null;
+    if (!items || !items.length) {
       box.innerHTML = '<div class="ph" style="padding:40px;color:#a1a1aa">Nenhum conteúdo nesta categoria.</div>';
       return;
     }
-    items.forEach(function (it) { box.appendChild(makeCard(it, kind, kind !== "live")); });
+    gridPending = { box: box, items: items, kind: kind, next: 0 };
+    appendGridChunk();
+    appendGridChunk();
+  }
+
+  function appendGridChunk() {
+    var g = gridPending;
+    if (!g || g.next >= g.items.length) return;
+    var end = Math.min(g.next + GRID_CHUNK, g.items.length);
+    var frag = document.createDocumentFragment();
+    for (var i = g.next; i < end; i++) {
+      frag.appendChild(makeCard(g.items[i], g.kind, g.kind !== "live"));
+    }
+    g.box.appendChild(frag);
+    g.next = end;
+  }
+
+  function maybeLoadMoreGrid(box) {
+    if (!gridPending || gridPending.box !== box) return;
+    if (box.scrollTop + box.clientHeight > box.scrollHeight - 900) appendGridChunk();
   }
 
   /* ---------------- Busca ---------------- */
@@ -915,6 +985,8 @@
   function logout() {
     try { LS.removeItem("stv_profile"); } catch (e) {}
     try { LS.removeItem(CATALOG_CACHE_KEY); } catch (e) {}
+    clearHistory();
+    state.userInfo = null;
     destroyPlayer();
     state.profile = null;
     state.playing = null;
@@ -1013,6 +1085,8 @@
   /* ---------------- Bind ---------------- */
   function init() {
     video = $("#video");
+    /* Nova sessão: histórico sempre começa vazio. */
+    clearHistory();
 
     video.addEventListener("playing", function () { $("#player-spinner").classList.remove("show"); applyAspect(); });
     video.addEventListener("loadedmetadata", applyAspect);
@@ -1096,6 +1170,23 @@
       logoutButton.addEventListener("click", function () { logout(); });
     }
 
+    var pfClear = $("#pf-clear");
+    if (pfClear) {
+      pfClear.addEventListener("click", function () {
+        clearHistory();
+        buildHome();
+        toast("Histórico de filmes assistidos limpo.");
+      });
+    }
+    var pfLogout = $("#pf-logout");
+    if (pfLogout) {
+      pfLogout.addEventListener("click", function () { logout(); });
+    }
+    var gridBox = $("#grid-items");
+    if (gridBox) {
+      gridBox.addEventListener("scroll", function () { maybeLoadMoreGrid(gridBox); });
+    }
+
     $("#btn-login").addEventListener("click", function () {
       var p = {
         host: normHost($("#in-host").value),
@@ -1111,6 +1202,7 @@
         var tab = t.dataset.tab;
         setActiveTab(tab);
         if (tab === "home") show("home");
+        else if (tab === "profile") { openProfile(); }
         else if (tab === "search") { show("search"); }
         else { state.prevGrid = "grid"; openGrid(tab === "live" ? "live" : tab === "movies" ? "movie" : "series"); }
       });

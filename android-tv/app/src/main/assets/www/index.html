@@ -41,6 +41,7 @@
             <button class="tab focusable" data-tab="movies">Filmes</button>
             <button class="tab focusable" data-tab="series">Séries</button>
             <button class="tab focusable" data-tab="search">Buscar</button>
+            <button class="tab focusable" data-tab="profile">Perfil</button>
           </nav>
 
           <button
@@ -104,6 +105,33 @@
           <input id="search-input" class="focusable" type="text" placeholder="Digite o nome do filme, série ou canal" />
         </div>
         <div id="search-results" class="grid"></div>
+      </section>
+
+      <!-- PERFIL -->
+      <section id="screen-profile" class="screen">
+        <header class="topbar">
+          <div class="brand small">Erick<span>TV</span></div>
+          <div class="grid-title">Perfil</div>
+        </header>
+        <div class="profile-wrap">
+          <div class="profile-card">
+            <div class="profile-avatar" id="pf-avatar">E</div>
+            <div class="profile-name" id="pf-user">—</div>
+            <div class="profile-status" id="pf-status">—</div>
+          </div>
+          <div class="profile-info">
+            <div class="pf-row"><span>Usuário</span><b id="pf-username">—</b></div>
+            <div class="pf-row"><span>Vencimento da lista</span><b id="pf-exp">—</b></div>
+            <div class="pf-row"><span>Dias restantes</span><b id="pf-days">—</b></div>
+            <div class="pf-row"><span>Conexões</span><b id="pf-conn">—</b></div>
+            <div class="pf-row"><span>Servidor</span><b id="pf-host">—</b></div>
+            <div class="pf-actions">
+              <button id="pf-clear" class="btn ghost focusable" type="button">🗑 Limpar histórico de filmes assistidos</button>
+              <button id="pf-logout" class="btn ghost focusable" type="button">⏻ Sair da conta</button>
+            </div>
+            <div class="pf-note">O histórico é guardado apenas durante esta sessão. Ao sair e entrar novamente, ele começa vazio.</div>
+          </div>
+        </div>
       </section>
 
       <!-- DETALHE -->
