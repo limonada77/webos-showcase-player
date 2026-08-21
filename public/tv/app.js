@@ -250,8 +250,11 @@
       if (!data || !data.user_info || String(data.user_info.auth) !== "1") {
         throw new Error("Usuário ou senha inválidos");
       }
+      state.userInfo = data.user_info;
+      state.serverInfo = data.server_info || null;
       LS.setItem("stv_profile", JSON.stringify(profile));
       $("#user-name").textContent = profile.user;
+      renderProfile();
       return loadCatalog();
     }).catch(function (e) {
       state.profile = null;
