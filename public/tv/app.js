@@ -465,17 +465,43 @@
     if (btn) btn.classList.add("active");
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
     var items = String(cat.category_id) === "__all" ? data.items : byCategory(data.items, cat.category_id);
-    renderGrid($("#grid-items"), items.slice(0, 300), kind);
+    /* Categoria completa: todos os itens, carregados aos poucos ao rolar. */
+    renderGrid($("#grid-items"), items, kind);
   }
+
+  /* Renderização progressiva: mostra TODOS os itens da categoria,
+     mas em blocos, para a TV não travar com listas de milhares. */
+  var GRID_CHUNK = 90;
+  var gridPending = null;
 
   function renderGrid(box, items, kind) {
     box.innerHTML = "";
     box.scrollTop = 0;
-    if (!items.length) {
+    gridPending = null;
+    if (!items || !items.length) {
       box.innerHTML = '<div class="ph" style="padding:40px;color:#a1a1aa">Nenhum conteúdo nesta categoria.</div>';
       return;
     }
-    items.forEach(function (it) { box.appendChild(makeCard(it, kind, kind !== "live")); });
+    gridPending = { box: box, items: items, kind: kind, next: 0 };
+    appendGridChunk();
+    appendGridChunk();
+  }
+
+  function appendGridChunk() {
+    var g = gridPending;
+    if (!g || g.next >= g.items.length) return;
+    var end = Math.min(g.next + GRID_CHUNK, g.items.length);
+    var frag = document.createDocumentFragment();
+    for (var i = g.next; i < end; i++) {
+      frag.appendChild(makeCard(g.items[i], g.kind, g.kind !== "live"));
+    }
+    g.box.appendChild(frag);
+    g.next = end;
+  }
+
+  function maybeLoadMoreGrid(box) {
+    if (!gridPending || gridPending.box !== box) return;
+    if (box.scrollTop + box.clientHeight > box.scrollHeight - 900) appendGridChunk();
   }
 
   /* ---------------- Busca ---------------- */
