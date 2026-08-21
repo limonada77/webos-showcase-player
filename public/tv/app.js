@@ -389,9 +389,21 @@
     state.heroKind = item.series_id ? "series" : (item.stream_type === "live" ? "live" : "movie");
   }
 
+  /* ------------------------------------------------------------
+     Histórico APENAS da sessão atual (memória).
+     Ao sair/entrar novamente, o histórico começa vazio.
+     ------------------------------------------------------------ */
+  var sessionHistory = { cont: [], progress: {} };
+
+  function clearHistory() {
+    sessionHistory = { cont: [], progress: {} };
+    try { LS.removeItem("stv_continue"); } catch (e) {}
+    try { LS.removeItem("stv_progress_v1"); } catch (e) {}
+  }
+
   /* ---------------- Continuar assistindo ---------------- */
   function getContinue() {
-    try { return JSON.parse(LS.getItem("stv_continue") || "[]"); } catch (e) { return []; }
+    return sessionHistory.cont.slice(0);
   }
   function saveContinue(item, kind, pos) {
     if (kind === "live") return;
@@ -399,14 +411,12 @@
     var rec = JSON.parse(JSON.stringify(item));
     rec._kind = kind; rec._pos = pos || 0;
     list.unshift(rec);
-    LS.setItem("stv_continue", JSON.stringify(list.slice(0, 12)));
+    sessionHistory.cont = list.slice(0, 12);
   }
 
   /* ------- Posição de reprodução (retomar de onde parou) ------- */
-  var PROGRESS_KEY = "stv_progress_v1";
-
   function getProgressMap() {
-    try { return JSON.parse(LS.getItem(PROGRESS_KEY) || "{}") || {}; } catch (e) { return {}; }
+    return sessionHistory.progress;
   }
 
   function progressKey(item, kind) {
@@ -423,13 +433,6 @@
     } else {
       map[progressKey(item, kind)] = { pos: Math.floor(pos), dur: Math.floor(dur || 0), at: Date.now() };
     }
-    /* Evita crescer sem limite na TV. */
-    var keys = Object.keys(map);
-    if (keys.length > 200) {
-      keys.sort(function (a, b) { return (map[a].at || 0) - (map[b].at || 0); });
-      keys.slice(0, keys.length - 200).forEach(function (k) { delete map[k]; });
-    }
-    try { LS.setItem(PROGRESS_KEY, JSON.stringify(map)); } catch (e) {}
   }
 
   function getProgress(item, kind) {
