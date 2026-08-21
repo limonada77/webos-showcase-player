@@ -445,6 +445,43 @@
   }
 
 
+  /* ---------------- Perfil ---------------- */
+  function fmtDate(ts) {
+    if (!ts) return "Sem vencimento";
+    var n = parseInt(ts, 10);
+    if (!isFinite(n) || n <= 0) return "Sem vencimento";
+    var d = new Date(n * 1000);
+    var p = function (x) { return x < 10 ? "0" + x : "" + x; };
+    return p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear();
+  }
+
+  function renderProfile() {
+    var u = state.userInfo || {};
+    var p = state.profile || {};
+    var name = p.user || u.username || "—";
+    $("#pf-user").textContent = name;
+    $("#pf-username").textContent = name;
+    $("#pf-avatar").textContent = (name[0] || "E").toUpperCase();
+    $("#pf-exp").textContent = fmtDate(u.exp_date);
+    var days = "—";
+    if (u.exp_date) {
+      var diff = Math.ceil((parseInt(u.exp_date, 10) * 1000 - Date.now()) / 86400000);
+      days = diff > 0 ? diff + " dia(s)" : "Vencida";
+    } else if (u.exp_date === null) {
+      days = "Ilimitado";
+    }
+    $("#pf-days").textContent = days;
+    $("#pf-status").textContent = u.status ? String(u.status) : (state.profile ? "Ativa" : "—");
+    $("#pf-conn").textContent = (u.active_cons != null ? u.active_cons : "0") + " / " + (u.max_connections != null ? u.max_connections : "—");
+    $("#pf-host").textContent = p.host || "—";
+  }
+
+  function openProfile() {
+    renderProfile();
+    setActiveTab("profile");
+    show("profile");
+  }
+
   /* ---------------- Grid / categorias ---------------- */
   function openGrid(kind) {
     state.gridKind = kind;
@@ -948,6 +985,8 @@
   function logout() {
     try { LS.removeItem("stv_profile"); } catch (e) {}
     try { LS.removeItem(CATALOG_CACHE_KEY); } catch (e) {}
+    clearHistory();
+    state.userInfo = null;
     destroyPlayer();
     state.profile = null;
     state.playing = null;
@@ -1046,6 +1085,8 @@
   /* ---------------- Bind ---------------- */
   function init() {
     video = $("#video");
+    /* Nova sessão: histórico sempre começa vazio. */
+    clearHistory();
 
     video.addEventListener("playing", function () { $("#player-spinner").classList.remove("show"); applyAspect(); });
     video.addEventListener("loadedmetadata", applyAspect);
@@ -1129,6 +1170,23 @@
       logoutButton.addEventListener("click", function () { logout(); });
     }
 
+    var pfClear = $("#pf-clear");
+    if (pfClear) {
+      pfClear.addEventListener("click", function () {
+        clearHistory();
+        buildHome();
+        toast("Histórico de filmes assistidos limpo.");
+      });
+    }
+    var pfLogout = $("#pf-logout");
+    if (pfLogout) {
+      pfLogout.addEventListener("click", function () { logout(); });
+    }
+    var gridBox = $("#grid-items");
+    if (gridBox) {
+      gridBox.addEventListener("scroll", function () { maybeLoadMoreGrid(gridBox); });
+    }
+
     $("#btn-login").addEventListener("click", function () {
       var p = {
         host: normHost($("#in-host").value),
@@ -1144,6 +1202,7 @@
         var tab = t.dataset.tab;
         setActiveTab(tab);
         if (tab === "home") show("home");
+        else if (tab === "profile") { openProfile(); }
         else if (tab === "search") { show("search"); }
         else { state.prevGrid = "grid"; openGrid(tab === "live" ? "live" : tab === "movies" ? "movie" : "series"); }
       });
