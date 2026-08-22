@@ -352,33 +352,87 @@
     return list.filter(function (i) { return String(i.category_id) === String(catId); });
   }
 
+  /* Fila de linhas da home: TODAS as categorias de filmes e séries,
+     renderizadas em blocos conforme o usuário desce. */
+  var homeQueue = [];
+  var HOME_CHUNK = 8;
+
+  function buildHomeQueue() {
+    homeQueue = [];
+    var cont = getContinue();
+    if (cont.length) homeQueue.push({ title: "Continuar assistindo", items: cont, kind: "resume", poster: false });
+    homeQueue.push({ title: "Filmes em alta", items: state.movies.items.slice(0, 24), kind: "movie", poster: true });
+    homeQueue.push({ title: "Séries para maratonar", items: state.series.items.slice(0, 24), kind: "series", poster: true });
+    homeQueue.push({ title: "Canais ao vivo", items: state.live.items.slice(0, 24), kind: "live", poster: false });
+
+    state.movies.cats.forEach(function (c) {
+      var items = byCategory(state.movies.items, c.category_id);
+      if (items.length > 3) homeQueue.push({ title: c.category_name, items: items, kind: "movie", poster: true });
+    });
+    state.series.cats.forEach(function (c) {
+      var items = byCategory(state.series.items, c.category_id);
+      if (items.length > 3) homeQueue.push({ title: c.category_name, items: items, kind: "series", poster: true });
+    });
+  }
+
+  function renderMoreHomeRows() {
+    var rows = $("#rows");
+    var n = 0;
+    while (homeQueue.length && n < HOME_CHUNK) {
+      var d = homeQueue.shift();
+      var r = makeRow(d.title, d.items, d.kind, d.poster);
+      if (r) { rows.appendChild(r); n++; }
+    }
+  }
+
+  function maybeLoadMoreHome() {
+    var rows = $("#rows");
+    if (!homeQueue.length) return;
+    if (rows.scrollTop + rows.clientHeight > rows.scrollHeight - 900) renderMoreHomeRows();
+  }
+
   function buildHome() {
     var rows = $("#rows");
     rows.innerHTML = "";
     rows.scrollTop = 0;
+    buildHomeQueue();
+    renderMoreHomeRows();
+    startBillboardRotation();
+  }
 
-    var cont = getContinue();
-    var r;
-    if (cont.length) { r = makeRow("Continuar assistindo", cont, "resume", false); if (r) rows.appendChild(r); }
+  /* ---------------- Billboard rotativo ---------------- */
+  var bbTimer = null;
+  var bbPool = [];
+  var bbIndex = -1;
 
-    r = makeRow("Filmes em alta", state.movies.items.slice(0, 24), "movie", true);
-    if (r) rows.appendChild(r);
-    r = makeRow("Séries para maratonar", state.series.items.slice(0, 24), "series", true);
-    if (r) rows.appendChild(r);
-    r = makeRow("Canais ao vivo", state.live.items.slice(0, 24), "live", false);
-    if (r) rows.appendChild(r);
+  function startBillboardRotation() {
+    stopBillboardRotation();
+    bbPool = state.movies.items.filter(function (m) { return pickImage(m); }).slice(0, 40);
+    if (!bbPool.length && state.series.items.length) {
+      bbPool = state.series.items.filter(function (m) { return pickImage(m); }).slice(0, 40);
+    }
+    if (!bbPool.length && state.live.items.length) bbPool = [state.live.items[0]];
+    if (!bbPool.length) return;
+    bbIndex = Math.floor(Math.random() * bbPool.length);
+    setBillboard(bbPool[bbIndex]);
+    bbTimer = setInterval(function () {
+      if (state.screen !== "home" || !bbPool.length) return;
+      bbIndex = (bbIndex + 1) % bbPool.length;
+      fadeBillboard(bbPool[bbIndex]);
+    }, 8000);
+  }
 
-    // 3 categorias de filmes com mais itens
-    state.movies.cats.slice(0, 6).forEach(function (c) {
-      var items = byCategory(state.movies.items, c.category_id);
-      var rr = makeRow(c.category_name, items, "movie", true);
-      if (rr && items.length > 3) rows.appendChild(rr);
-    });
+  function stopBillboardRotation() {
+    if (bbTimer) { clearInterval(bbTimer); bbTimer = null; }
+  }
 
-    // Billboard
-    var pool = state.movies.items.filter(function (m) { return pickImage(m); });
-    var hero = pool.length ? pool[Math.floor(Math.random() * Math.min(pool.length, 30))] : (state.live.items[0] || null);
-    setBillboard(hero);
+  function fadeBillboard(item) {
+    var el = $("#bb-img");
+    el.style.opacity = "0";
+    setTimeout(function () {
+      setBillboard(item);
+      el.style.opacity = "1";
+    }, 450);
   }
 
   function setBillboard(item) {
