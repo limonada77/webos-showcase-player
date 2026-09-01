@@ -288,7 +288,8 @@
       saveCatalogCache();
 
       buildHome();
-      show("home");
+      buildMenu();
+      if (state.screen === "login" || state.screen === "home" || state.screen === "menu" || !state.screen) goMenu();
     });
   }
 
@@ -398,6 +399,42 @@
     buildHomeQueue();
     renderMoreHomeRows();
     startBillboardRotation();
+  }
+
+
+  /* ---------------- Menu principal (launcher) ---------------- */
+  function buildMenu() {
+    var track = $("#menu-strip-track");
+    var strip = track ? track.parentNode : null;
+    if (!track || !strip) return;
+    track.innerHTML = "";
+    var items = getContinue();
+    var kindOf = function (it) { return it.__kind || (it.series_id ? "series" : (it.stream_type === "live" ? "live" : "movie")); };
+    var title = "Continuar assistindo";
+    if (!items.length) {
+      items = (state.movies.items || []).slice(0, 20);
+      title = "Adicionados recentemente";
+    }
+    if (!items.length) { strip.classList.add("empty"); }
+    else {
+      strip.classList.remove("empty");
+      $("#menu-strip-title").textContent = title;
+      items.slice(0, 20).forEach(function (it) {
+        var c = makeCard(it, kindOf(it), true);
+        if (c) track.appendChild(c);
+      });
+    }
+    var u = state.userInfo || {};
+    var pr = state.profile || {};
+    $("#mf-user").textContent = "Usuário: " + (pr.user || "—");
+    $("#mf-exp").textContent = "Vencimento: " + fmtDate(u.exp_date);
+    $("#mf-host").textContent = pr.host || "";
+  }
+
+  function goMenu() {
+    buildMenu();
+    setActiveTab("home");
+    show("menu");
   }
 
   /* ---------------- Billboard rotativo ---------------- */
@@ -1106,7 +1143,7 @@
   }
 
   function goBack() {
-    if (state.screen === "home") {
+    if (state.screen === "menu") {
       if (window.webOS && window.webOS.platformBack) window.webOS.platformBack();
       else if (window.close) window.close();
       return;
@@ -1120,19 +1157,34 @@
       var origin = state.detailOrigin;
       state.detailOrigin = null;
       state.detail = null;
-      if (origin === "grid" || origin === "search") { show(origin); return; }
-      show("home");
-      setActiveTab("home");
+      if (origin === "grid" || origin === "search" || origin === "home") { show(origin); return; }
+      goMenu();
       return;
     }
 
     state.detail = null;
     state.detailOrigin = null;
-    show("home");
-    setActiveTab("home");
+    goMenu();
   }
 
   function setActiveTab(name) {
+    $$("#screen-menu .tile").forEach(function (t) {
+      t.addEventListener("click", function () {
+        var go = t.dataset.go;
+        if (go === "highlights") { setActiveTab("home"); show("home"); return; }
+        state.prevGrid = "grid";
+        openGrid(go);
+      });
+    });
+    var mtMap = { "#mt-search": function () { setActiveTab("search"); show("search"); },
+                  "#mt-profile": openProfile,
+                  "#mt-refresh": function () { refreshCatalog(); },
+                  "#mt-logout": function () { logout(); } };
+    Object.keys(mtMap).forEach(function (sel) {
+      var b = $(sel);
+      if (b) b.addEventListener("click", mtMap[sel]);
+    });
+
     $$(".tab").forEach(function (t) { t.classList.toggle("active", t.dataset.tab === name); });
   }
 
@@ -1229,6 +1281,7 @@
       pfClear.addEventListener("click", function () {
         clearHistory();
         buildHome();
+        buildMenu();
         toast("Histórico de filmes assistidos limpo.");
       });
     }
@@ -1322,8 +1375,7 @@
        */
       if (restoreCatalogCache()) {
         buildHome();
-        show("home");
-        setActiveTab("home");
+        goMenu();
       } else {
 
         /*
@@ -1333,8 +1385,7 @@
          * Mostra Home enquanto busca catálogo,
          * sem voltar para o formulário de login.
          */
-        show("home");
-        setActiveTab("home");
+        goMenu();
 
         $("#bb-title").textContent =
           "Carregando catálogo…";
