@@ -31,7 +31,52 @@
         </div>
       </section>
 
+      <!-- MENU PRINCIPAL (launcher) -->
+      <section id="screen-menu" class="screen">
+        <div class="menu-bg"></div>
+        <header class="menu-top">
+          <div class="brand small">Erick<span>TV</span></div>
+          <div class="menu-tools">
+            <button id="mt-search" class="tool focusable" type="button" title="Buscar">🔍</button>
+            <button id="mt-profile" class="tool focusable" type="button" title="Perfil e configurações">⚙</button>
+            <button id="mt-refresh" class="tool focusable" type="button" title="Atualizar conteúdos">⟳</button>
+            <button id="mt-logout" class="tool focusable" type="button" title="Sair da conta">⏻</button>
+          </div>
+        </header>
+
+        <div class="menu-tiles">
+          <button class="tile focusable" data-go="live" type="button">
+            <span class="tile-ico">📺</span>
+            <span class="tile-name">TV ao vivo</span>
+          </button>
+          <button class="tile focusable" data-go="movie" type="button">
+            <span class="tile-ico">🎬</span>
+            <span class="tile-name">Filmes</span>
+          </button>
+          <button class="tile focusable" data-go="series" type="button">
+            <span class="tile-ico">🎞</span>
+            <span class="tile-name">Séries</span>
+          </button>
+          <button class="tile focusable" data-go="highlights" type="button">
+            <span class="tile-ico">📋</span>
+            <span class="tile-name">Lista</span>
+          </button>
+        </div>
+
+        <div class="menu-strip">
+          <h2 id="menu-strip-title">Continuar assistindo</h2>
+          <div id="menu-strip-track" class="row-track"></div>
+        </div>
+
+        <footer class="menu-foot">
+          <span id="mf-user">—</span>
+          <span id="mf-exp">—</span>
+          <span id="mf-host">—</span>
+        </footer>
+      </section>
+
       <!-- HOME -->
+
       <section id="screen-home" class="screen">
         <header class="topbar">
           <div class="brand small">Erick<span>TV</span></div>
@@ -179,7 +224,7 @@
         try {
           if (window.localStorage.getItem("stv_profile")) {
             var l = document.getElementById("screen-login");
-            var h = document.getElementById("screen-home");
+            var h = document.getElementById("screen-menu");
             if (l) l.className = l.className.replace(" active", "");
             if (h && h.className.indexOf("active") === -1) h.className += " active";
           }
