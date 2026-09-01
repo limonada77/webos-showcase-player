@@ -409,7 +409,7 @@
     if (!track || !strip) return;
     track.innerHTML = "";
     var items = getContinue();
-    var kindOf = function (it) { return it.__kind || (it.series_id ? "series" : (it.stream_type === "live" ? "live" : "movie")); };
+    var kindOf = function (it) { return it._kind || (it.series_id ? "series" : (it.stream_type === "live" ? "live" : "movie")); };
     var title = "Continuar assistindo";
     if (!items.length) {
       items = (state.movies.items || []).slice(0, 20);
