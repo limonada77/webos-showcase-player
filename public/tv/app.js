@@ -254,6 +254,7 @@
       state.serverInfo = data.server_info || null;
       LS.setItem("stv_profile", JSON.stringify(profile));
       upsertList(profile);
+      state.addingList = false;
       $("#user-name").textContent = profile.user;
       renderProfile();
       return loadCatalog();
@@ -1199,7 +1200,15 @@
       else if (window.close) window.close();
       return;
     }
-    if (state.screen === "login") return;
+    if (state.screen === "login") {
+      if (state.addingList && state.profile) {
+        state.addingList = false;
+        $("#in-host").value = state.profile.host; $("#in-user").value = state.profile.user; $("#in-pass").value = state.profile.pass;
+        $("#login-msg").textContent = "";
+        openLists();
+      }
+      return;
+    }
 
     if (state.screen === "detail") {
       /*
@@ -1218,7 +1227,7 @@
     goMenu();
   }
 
-  function setActiveTab(name) {
+  function bindMenu() {
     $$("#screen-menu .tile").forEach(function (t) {
       t.addEventListener("click", function () {
         var go = t.dataset.go;
@@ -1235,7 +1244,9 @@
       var b = $(sel);
       if (b) b.addEventListener("click", mtMap[sel]);
     });
+  }
 
+  function setActiveTab(name) {
     $$(".tab").forEach(function (t) { t.classList.toggle("active", t.dataset.tab === name); });
   }
 
@@ -1327,6 +1338,7 @@
       logoutButton.addEventListener("click", function () { logout(); });
     }
 
+    bindMenu();
     var listsAdd = $("#lists-add");
     if (listsAdd) {
       listsAdd.addEventListener("click", function () {
