@@ -1,5 +1,5 @@
 /* =========================================================
-   ErickTV — Xtream Codes player para LG webOS
+   DarkTV — Xtream Codes player para LG webOS
    UI estilo streaming + navegação por controle remoto
    ========================================================= */
 (function () {
@@ -479,7 +479,7 @@
     state.hero = item;
     $("#bb-title").textContent = esc(item.name || item.title);
     $("#bb-kicker").textContent = item.stream_type === "live" ? "Ao vivo agora" : "Em destaque";
-    $("#bb-desc").textContent = esc(item.plot || item.description || "Assista agora em alta qualidade no seu ErickTV.");
+    $("#bb-desc").textContent = esc(item.plot || item.description || "Assista agora em alta qualidade no seu DarkTV.");
     var img = pickImage(item);
     var el = $("#bb-img");
     if (img) { el.src = img; el.style.display = "block"; } else { el.style.display = "none"; }
@@ -1196,7 +1196,8 @@
 
   function goBack() {
     if (state.screen === "menu") {
-      if (window.webOS && window.webOS.platformBack) window.webOS.platformBack();
+      if (window.AndroidTV && window.AndroidTV.exit) window.AndroidTV.exit();
+      else if (window.webOS && window.webOS.platformBack) window.webOS.platformBack();
       else if (window.close) window.close();
       return;
     }
