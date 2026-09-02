@@ -1,6 +1,6 @@
 # Stream TV X
 
-crie um ipk para LG web os de reprodutor de lista m3u q entra só com xtream. ipk completo como um streaming e usa um player q a LG webos consegue reproduzir, quero nenhum erro nesse app. e quero a interface q nem dá Netflix, o front end da Netflix tudo bonito bonito, quero parecendo um streaming mesmo ao invés de um reprodutor normal. lembre-se q é um app pra tv então capricha e já arruma tudo pro modo tv
+criei um ipk para LG web os de reprodutor de lista m3u q entra só com xtream. ipk completo como um streaming e usa um player q a LG webos consegue reproduzir, quero nenhum erro nesse app. e quero a interface q nem dá Netflix, o front end da Netflix tudo bonito bonito, quero parecendo um streaming mesmo ao invés de um reprodutor normal. lembre-se q é um app pra tv então capricha e já arruma tudo pro modo tv
 
 This project was built with [Lovable](https://lovable.dev).
 
