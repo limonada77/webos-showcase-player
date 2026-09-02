@@ -253,6 +253,8 @@
       state.userInfo = data.user_info;
       state.serverInfo = data.server_info || null;
       LS.setItem("stv_profile", JSON.stringify(profile));
+      upsertList(profile);
+      state.addingList = false;
       $("#user-name").textContent = profile.user;
       renderProfile();
       return loadCatalog();
@@ -1072,6 +1074,56 @@
     setActiveTab("home");
   }
 
+  /* ---------------- Listas (várias contas Xtream) ---------------- */
+  function loadLists() {
+    try { return JSON.parse(LS.getItem("stv_lists") || "[]") || []; } catch (e) { return []; }
+  }
+  function saveLists(arr) { try { LS.setItem("stv_lists", JSON.stringify(arr)); } catch (e) {} }
+  function sameList(a, b) { return a && b && a.host === b.host && a.user === b.user; }
+  function upsertList(p) {
+    var arr = loadLists().filter(function (x) { return !sameList(x, p); });
+    arr.unshift({ host: p.host, user: p.user, pass: p.pass });
+    saveLists(arr.slice(0, 20));
+  }
+  function hostLabel(h) { return String(h || "").replace(/^https?:\/\//, ""); }
+  function renderLists() {
+    var box = $("#lists-items");
+    box.innerHTML = "";
+    var arr = loadLists();
+    if (state.profile && !arr.some(function (x) { return sameList(x, state.profile); })) {
+      upsertList(state.profile); arr = loadLists();
+    }
+    arr.forEach(function (p) {
+      var isActive = sameList(p, state.profile);
+      var c = document.createElement("div");
+      c.className = "list-card focusable" + (isActive ? " active" : "");
+      c.innerHTML = '<div class="lc-name"></div><div class="lc-host"></div>' +
+        '<div class="lc-tag">' + (isActive ? "Lista em uso" : "Toque para entrar") + '</div>';
+      $(".lc-name", c).textContent = p.user;
+      $(".lc-host", c).textContent = hostLabel(p.host);
+      var rm = document.createElement("button");
+      rm.type = "button"; rm.className = "list-remove focusable"; rm.textContent = "Remover";
+      rm.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        saveLists(loadLists().filter(function (x) { return !sameList(x, p); }));
+        if (isActive) { logout(); return; }
+        renderLists(); toast("Lista removida.");
+      });
+      c.appendChild(rm);
+      c.addEventListener("click", function () {
+        if (isActive) { goMenu(); return; }
+        try { LS.removeItem(CATALOG_CACHE_KEY); } catch (e) {}
+        clearHistory();
+        state.lastFocus = {};
+        toast("Entrando em " + p.user + "…");
+        $("#in-host").value = p.host; $("#in-user").value = p.user; $("#in-pass").value = p.pass;
+        doLogin(p, true).then(function () { goMenu(); }).catch(function () {});
+      });
+      box.appendChild(c);
+    });
+  }
+  function openLists() { renderLists(); show("lists"); }
+
   /* ---------------- Sair ---------------- */
   function logout() {
     try { LS.removeItem("stv_profile"); } catch (e) {}
@@ -1148,7 +1200,15 @@
       else if (window.close) window.close();
       return;
     }
-    if (state.screen === "login") return;
+    if (state.screen === "login") {
+      if (state.addingList && state.profile) {
+        state.addingList = false;
+        $("#in-host").value = state.profile.host; $("#in-user").value = state.profile.user; $("#in-pass").value = state.profile.pass;
+        $("#login-msg").textContent = "";
+        openLists();
+      }
+      return;
+    }
 
     if (state.screen === "detail") {
       /*
@@ -1167,11 +1227,11 @@
     goMenu();
   }
 
-  function setActiveTab(name) {
+  function bindMenu() {
     $$("#screen-menu .tile").forEach(function (t) {
       t.addEventListener("click", function () {
         var go = t.dataset.go;
-        if (go === "highlights") { setActiveTab("home"); show("home"); return; }
+        if (go === "highlights") { openLists(); return; }
         state.prevGrid = "grid";
         openGrid(go);
       });
@@ -1184,7 +1244,9 @@
       var b = $(sel);
       if (b) b.addEventListener("click", mtMap[sel]);
     });
+  }
 
+  function setActiveTab(name) {
     $$(".tab").forEach(function (t) { t.classList.toggle("active", t.dataset.tab === name); });
   }
 
@@ -1276,6 +1338,16 @@
       logoutButton.addEventListener("click", function () { logout(); });
     }
 
+    bindMenu();
+    var listsAdd = $("#lists-add");
+    if (listsAdd) {
+      listsAdd.addEventListener("click", function () {
+        $("#in-host").value = ""; $("#in-user").value = ""; $("#in-pass").value = "";
+        $("#login-msg").textContent = "Adicione uma nova lista Xtream.";
+        state.addingList = true;
+        show("login");
+      });
+    }
     var pfClear = $("#pf-clear");
     if (pfClear) {
       pfClear.addEventListener("click", function () {
