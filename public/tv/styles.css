@@ -456,4 +456,4 @@ body,
   border: 1px solid rgba(255,255,255,0.28); background: transparent; color: inherit;
 }
 .list-remove.focused { background: #e50914; color: #fff; box-shadow: var(--focus); }
-#lists-add { margin-top: 8px; }
+#lists-add { margin-top: 8px; width: auto; display: inline-block; padding: 14px 28px; }

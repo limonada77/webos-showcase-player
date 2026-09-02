@@ -37,29 +37,29 @@
         <header class="menu-top">
           <div class="brand small">Erick<span>TV</span></div>
           <div class="menu-tools">
-            <button id="mt-search" class="tool focusable" type="button" title="Buscar">🔍</button>
-            <button id="mt-profile" class="tool focusable" type="button" title="Perfil e configurações">⚙</button>
-            <button id="mt-refresh" class="tool focusable" type="button" title="Atualizar conteúdos">⟳</button>
-            <button id="mt-logout" class="tool focusable" type="button" title="Sair da conta">⏻</button>
+            <button id="mt-search" class="tool focusable" type="button" title="Buscar"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+            <button id="mt-profile" class="tool focusable" type="button" title="Perfil e configurações"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M5.9 5.9l1.5 1.5M16.6 16.6l1.5 1.5M18.1 5.9l-1.5 1.5M7.4 16.6l-1.5 1.5"/></svg></button>
+            <button id="mt-refresh" class="tool focusable" type="button" title="Atualizar conteúdos"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></button>
+            <button id="mt-logout" class="tool focusable" type="button" title="Sair da conta"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9"/><path d="M6.5 6.8a8 8 0 1 0 11 0"/></svg></button>
           </div>
         </header>
 
         <div class="menu-tiles">
           <button class="tile focusable" data-go="live" type="button">
-            <span class="tile-ico">📺</span>
+            <span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6.5" width="19" height="12.5" rx="2"/><path d="M8 3.2l4 3.3 4-3.3"/></svg></span>
             <span class="tile-name">TV ao vivo</span>
           </button>
           <button class="tile focusable" data-go="movie" type="button">
-            <span class="tile-ico">🎬</span>
+            <span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M8 4.5v15M16 4.5v15M2.5 12h19M2.5 8.2h5.5M2.5 15.8h5.5M16 8.2h5.5M16 15.8h5.5"/></svg></span>
             <span class="tile-name">Filmes</span>
           </button>
           <button class="tile focusable" data-go="series" type="button">
-            <span class="tile-ico">🎞</span>
+            <span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="12" rx="2"/><path d="M7 4h12a2 2 0 0 1 2 2v10"/></svg></span>
             <span class="tile-name">Séries</span>
           </button>
           <button class="tile focusable" data-go="highlights" type="button">
-            <span class="tile-ico">📋</span>
-            <span class="tile-name">Lista</span>
+            <span class="tile-ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h10M4 18h7"/><path d="M18 10v8M22 14h-8"/></svg></span>
+            <span class="tile-name">Listas</span>
           </button>
         </div>
 
@@ -70,7 +70,9 @@
 
         <footer class="menu-foot">
           <span id="mf-user">—</span>
+          <span class="foot-sep">•</span>
           <span id="mf-exp">—</span>
+          <span class="foot-sep">•</span>
           <span id="mf-host">—</span>
         </footer>
       </section>
@@ -95,7 +97,7 @@
             type="button"
             title="Atualizar conteúdos"
           >
-            ⟳ Atualizar
+            Atualizar
           </button>
 
           <button
@@ -104,7 +106,7 @@
             type="button"
             title="Sair da conta"
           >
-            ⏻ Sair
+            Sair
           </button>
 
           <div class="user-chip"><span id="user-name">—</span></div>
@@ -171,11 +173,24 @@
             <div class="pf-row"><span>Conexões</span><b id="pf-conn">—</b></div>
             <div class="pf-row"><span>Servidor</span><b id="pf-host">—</b></div>
             <div class="pf-actions">
-              <button id="pf-clear" class="btn ghost focusable" type="button">🗑 Limpar histórico de filmes assistidos</button>
-              <button id="pf-logout" class="btn ghost focusable" type="button">⏻ Sair da conta</button>
+              <button id="pf-clear" class="btn ghost focusable" type="button">Limpar histórico de filmes assistidos</button>
+              <button id="pf-logout" class="btn ghost focusable" type="button">Sair da conta</button>
             </div>
             <div class="pf-note">O histórico é guardado apenas durante esta sessão. Ao sair e entrar novamente, ele começa vazio.</div>
           </div>
+        </div>
+      </section>
+
+      <!-- LISTAS -->
+      <section id="screen-lists" class="screen">
+        <header class="topbar">
+          <div class="brand small">Erick<span>TV</span></div>
+          <div class="grid-title">Minhas listas</div>
+        </header>
+        <div class="lists-wrap">
+          <div id="lists-items" class="lists-grid"></div>
+          <button id="lists-add" class="btn primary focusable" type="button">+ Adicionar outra lista</button>
+          <div class="pf-note">Selecione uma lista para entrar nela. Você pode salvar várias contas Xtream e alternar quando quiser.</div>
         </div>
       </section>
 
@@ -205,8 +220,8 @@
             <div class="bar"><div id="osd-progress" class="bar-fill"></div></div>
             <div class="osd-times"><span id="osd-cur">00:00</span><span id="osd-dur">--:--</span></div>
             <div class="osd-buttons">
-              <button id="osd-next-ep" class="osd-btn" type="button">⏭ Pular episódio</button>
-              <button id="osd-aspect" class="osd-btn" type="button">⛶ Ajustar imagem</button>
+              <button id="osd-next-ep" class="osd-btn" type="button">Pular episódio</button>
+              <button id="osd-aspect" class="osd-btn" type="button">Ajustar imagem</button>
             </div>
             <div class="osd-hint">OK: pausar · ◀ ▶: 10s · ▲ ▼: escolher botão · VOLTAR: sair</div>
           </div>
