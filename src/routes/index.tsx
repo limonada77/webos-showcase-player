@@ -3,13 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "StreamTV — App IPTV Xtream para LG webOS" },
+      { title: "DarkTV — App IPTV Xtream para LG webOS" },
       {
         name: "description",
         content:
-          "StreamTV: app IPTV para LG webOS com login Xtream Codes, interface de streaming e player HLS. Baixe o .ipk pronto para instalar.",
+          "DarkTV: app IPTV para LG webOS com login Xtream Codes, interface de streaming e player HLS. Baixe o .ipk pronto para instalar.",
       },
-      { property: "og:title", content: "StreamTV — App IPTV Xtream para LG webOS" },
+      { property: "og:title", content: "DarkTV — App IPTV Xtream para LG webOS" },
       {
         property: "og:description",
         content:
@@ -53,7 +53,7 @@ function Index() {
 
         <div className="mt-8 overflow-hidden rounded-lg border border-border bg-black">
           <iframe
-            title="Prévia do StreamTV"
+            title="Prévia do DarkTV"
             src="/tv/index.html"
             className="h-[720px] w-full"
             style={{ border: 0 }}
@@ -72,7 +72,7 @@ function Index() {
               <li>
                 <code>ares-install com.streamtv.app_1.0.0_all.ipk -d minhaTV</code>
               </li>
-              <li>Abra o StreamTV na tela inicial e entre com servidor, usuário e senha Xtream.</li>
+              <li>Abra o DarkTV na tela inicial e entre com servidor, usuário e senha Xtream.</li>
             </ol>
           </div>
           <div className="rounded-lg border border-border p-5">
