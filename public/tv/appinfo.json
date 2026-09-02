@@ -1,10 +1,10 @@
 {
   "id": "com.streamtv.app",
   "version": "1.0.0",
-  "vendor": "ErickTV",
+  "vendor": "DarkTV",
   "type": "web",
   "main": "index.html",
-  "title": "ErickTV",
+  "title": "DarkTV",
   "icon": "icon.png",
   "largeIcon": "largeIcon.png",
   "splashBackground": "splash.png",
@@ -20,5 +20,5 @@
   ],
   "allowVideoCapture": false,
   "allowAudioCapture": false,
-  "appDescription": "ErickTV - Filmes, séries e TV"
+  "appDescription": "DarkTV - Filmes, séries e TV"
 }

@@ -1,4 +1,4 @@
-/* ErickTV — webOS TV UI (1280x720 base, escala para 1920x1080) */
+/* DarkTV — webOS TV UI (1280x720 base, escala para 1920x1080) */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -311,7 +311,7 @@ body,
 }
 
 
-/* ERICKTV_SEEK_BAR */
+/* DARKTV_SEEK_BAR */
 .bar {
   cursor: pointer;
 }
