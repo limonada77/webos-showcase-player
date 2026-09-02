@@ -29,8 +29,8 @@ Section: misc
 Priority: optional
 Architecture: all
 Installed-Size: $SIZE
-Maintainer: StreamTV <dev@streamtv.app>
-Description: StreamTV - reprodutor Xtream Codes com interface de streaming para LG webOS
+Maintainer: DarkTV <dev@darktv.app>
+Description: DarkTV - reprodutor Xtream Codes com interface de streaming para LG webOS
 webOS-Package-Format-Version: 2
 webOS-Packager-Version: 1.0.0
 EOF
