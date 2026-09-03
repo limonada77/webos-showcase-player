@@ -576,31 +576,73 @@
   }
 
   /* ---------------- Grid / categorias ---------------- */
+  function addedTs(i) {
+    var v = i.added || i.last_modified || 0;
+    var n = parseInt(v, 10);
+    return isFinite(n) ? n : 0;
+  }
+  function recentlyAdded(list, max) {
+    return list.slice(0).sort(function (a, b) { return addedTs(b) - addedTs(a); }).slice(0, max || 100);
+  }
+
+  function openSearch(origin) {
+    state.searchOrigin = origin || null;
+    setActiveTab("search");
+    show("search");
+  }
+
   function openGrid(kind) {
     state.gridKind = kind;
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
-    $("#grid-title").textContent = kind === "movie" ? "Filmes" : kind === "series" ? "Séries" : "Canais ao vivo";
     var catBox = $("#cat-list");
     catBox.innerHTML = "";
-    var cats = [{ category_id: "__all", category_name: "Todos" }].concat(data.cats);
+
+    /* Botão Pesquisar no topo da lateral */
+    var sb = document.createElement("button");
+    sb.className = "cat cat-search focusable";
+    sb.innerHTML = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="cat-name">Pesquisar</span>';
+    sb.addEventListener("click", function () { openSearch("grid"); });
+    catBox.appendChild(sb);
+
+    var cats = [];
+    if (kind !== "live") {
+      var cont = getContinue().filter(function (i) { return i._kind === kind; });
+      cats.push({ category_id: "__cont", category_name: "Continuar assistindo", _items: cont });
+      cats.push({ category_id: "__recent", category_name: "Recentes adicionados", _items: recentlyAdded(data.items, 100) });
+    }
+    cats.push({ category_id: "__all", category_name: "Todos", _items: data.items });
+    data.cats.forEach(function (c) {
+      cats.push({ category_id: c.category_id, category_name: c.category_name, _items: byCategory(data.items, c.category_id) });
+    });
+
+    var defaultBtn = null, defaultCat = null;
     cats.forEach(function (c) {
       var b = document.createElement("button");
       b.className = "cat focusable";
-      b.textContent = c.category_name;
+      var n = document.createElement("span"); n.className = "cat-name"; n.textContent = c.category_name;
+      var k = document.createElement("span"); k.className = "cat-count"; k.textContent = c._items.length;
+      b.appendChild(n); b.appendChild(k);
       b.addEventListener("click", function () { selectCat(kind, c, b); });
       catBox.appendChild(b);
+      var isDefault = kind === "live" ? c.category_id === "__all" : c.category_id === "__recent";
+      if (isDefault) { defaultBtn = b; defaultCat = c; }
     });
-    selectCat(kind, cats[0], catBox.firstChild);
+    catBox.scrollTop = 0;
+    /* Sempre abre em "Recentes adicionados" (ou "Todos" na TV ao vivo). */
+    selectCat(kind, defaultCat, defaultBtn);
+    state.lastFocus.grid = defaultBtn;
     show("grid");
   }
 
   function selectCat(kind, cat, btn) {
     $$("#cat-list .cat").forEach(function (b) { b.classList.remove("active"); });
     if (btn) btn.classList.add("active");
+    $("#grid-title").textContent = cat.category_name;
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
-    var items = String(cat.category_id) === "__all" ? data.items : byCategory(data.items, cat.category_id);
+    var items = cat._items || (String(cat.category_id) === "__all" ? data.items : byCategory(data.items, cat.category_id));
+    var k = String(cat.category_id) === "__cont" ? "resume" : kind;
     /* Categoria completa: todos os itens, carregados aos poucos ao rolar. */
-    renderGrid($("#grid-items"), items, kind);
+    renderGrid($("#grid-items"), items, k);
   }
 
   /* Renderização progressiva: mostra TODOS os itens da categoria,
