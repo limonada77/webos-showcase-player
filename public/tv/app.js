@@ -1265,6 +1265,12 @@
       return;
     }
 
+    if (state.screen === "search" && state.searchOrigin === "grid") {
+      state.searchOrigin = null;
+      show("grid");
+      return;
+    }
+
     state.detail = null;
     state.detailOrigin = null;
     goMenu();
@@ -1279,7 +1285,7 @@
         openGrid(go);
       });
     });
-    var mtMap = { "#mt-search": function () { setActiveTab("search"); show("search"); },
+    var mtMap = { "#mt-search": function () { openSearch("menu"); },
                   "#mt-profile": openProfile,
                   "#mt-refresh": function () { refreshCatalog(); },
                   "#mt-logout": function () { logout(); } };
