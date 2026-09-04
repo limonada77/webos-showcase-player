@@ -30,7 +30,7 @@
 
   /* ERICKTV_ACCESS_GATE_V1 */
   var ACCESS_URL =
-    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/access.json?ref=main";
+    "https://raw.githubusercontent.com/limonada77/webos-showcase-player/main/public/access.json";
 
   function normalizeDeviceId(value) {
     var raw = String(value || "").trim().toUpperCase();
@@ -253,26 +253,21 @@
     var status = $("#access-status");
 
     fetch(
-      ACCESS_URL + "&ts=" + Date.now(),
-      { method: "GET", cache: "no-store" }
+      ACCESS_URL +
+        "?ts=" +
+        Date.now() +
+        "-" +
+        Math.random(),
+      {
+        method: "GET",
+        cache: "no-store"
+      }
     )
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
-      .then(function (payload) {
-        var data = payload;
-
-        if (payload && payload.content) {
-          var raw =
-            String(payload.content)
-              .replace(/\s+/g, "");
-
-          data = JSON.parse(
-            window.atob(raw)
-          );
-        }
-
+      .then(function (data) {
         if (accessGrantMatches(data, state.accessHash)) {
           if (status) status.textContent = "Acesso liberado.";
           unlockAccess();
@@ -325,7 +320,7 @@
     checkAccessNow();
 
     state.accessTimer =
-      setInterval(checkAccessNow, 1500);
+      setInterval(checkAccessNow, 400);
   }
 
   /* ---------------- Estado ---------------- */
