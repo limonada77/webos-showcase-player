@@ -28,10 +28,8 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
 
-    private static final String OWNER = "limonada77";
-    private static final String REPO = "webos-showcase-player";
-    private static final String PATH = "public/access.json";
-    private static final String BRANCH = "main";
+    private static final String ACCESS_URL =
+        "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/grant-access";
 
     private EditText deviceInput;
     private EditText tokenInput;
@@ -119,11 +117,11 @@ public class MainActivity extends Activity {
         status.setPadding(0, dp(14), 0, dp(30));
         root.addView(status);
 
-        TextView settingsTitle = text("Configuração do GitHub", 18, true);
+        TextView settingsTitle = text("Configuração do acesso", 18, true);
         root.addView(settingsTitle);
 
         TextView settingsHelp = text(
-            "Na primeira vez, informe um Fine-grained Personal Access Token com acesso somente a este repositório e permissão Contents: Read and write. O token fica salvo apenas neste celular.",
+            "Na primeira vez, informe a Chave Admin do DarkTV. Ela fica salva apenas neste celular.",
             13,
             false
         );
@@ -131,7 +129,7 @@ public class MainActivity extends Activity {
         settingsHelp.setPadding(0, dp(6), 0, dp(12));
         root.addView(settingsHelp);
 
-        tokenInput = field("Token GitHub");
+        tokenInput = field("Chave Admin DarkTV");
         tokenInput.setInputType(
             InputType.TYPE_CLASS_TEXT |
             InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -139,7 +137,7 @@ public class MainActivity extends Activity {
 
         String savedToken =
             getSharedPreferences("admin", MODE_PRIVATE)
-                .getString("github_token", "");
+                .getString("darktv_admin_key", "");
 
         tokenInput.setText(savedToken);
         root.addView(tokenInput);
@@ -150,10 +148,10 @@ public class MainActivity extends Activity {
 
             getSharedPreferences("admin", MODE_PRIVATE)
                 .edit()
-                .putString("github_token", token)
+                .putString("darktv_admin_key", token)
                 .apply();
 
-            status.setText("Token salvo neste celular.");
+            status.setText("Chave Admin salva neste celular.");
             status.setTextColor(Color.rgb(134, 239, 172));
         });
         root.addView(saveToken);
@@ -179,7 +177,7 @@ public class MainActivity extends Activity {
         }
 
         if (token.isEmpty()) {
-            fail("Salve primeiro o token do GitHub.");
+            fail("Salve primeiro a Chave Admin.");
             return;
         }
 
@@ -189,7 +187,7 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             try {
                 String hash = sha256(device);
-                updateAccessFile(token, hash);
+                updateAccessBackend(token, hash);
 
                 runOnUiThread(() -> {
                     status.setText(
@@ -207,149 +205,51 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    private void updateAccessFile(String token, String deviceHash)
-        throws Exception {
+    private void updateAccessBackend(
+        String adminKey,
+        String deviceHash
+    ) throws Exception {
 
-        String api =
-            "https://api.github.com/repos/" +
-            OWNER + "/" + REPO +
-            "/contents/" + PATH +
-            "?ref=" + BRANCH;
+        HttpURLConnection c =
+            (HttpURLConnection) new URL(ACCESS_URL).openConnection();
 
-        HttpURLConnection get = open(api, "GET", token);
-        int getCode = get.getResponseCode();
+        c.setRequestMethod("POST");
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(20000);
+        c.setDoOutput(true);
 
-        String sha = null;
-        JSONObject data;
-
-        if (getCode == 200) {
-            JSONObject file = new JSONObject(readBody(get));
-            sha = file.getString("sha");
-
-            String encoded =
-                file.getString("content").replace("\n", "");
-
-            String decoded =
-                new String(
-                    Base64.decode(encoded, Base64.DEFAULT),
-                    StandardCharsets.UTF_8
-                );
-
-            data = new JSONObject(decoded);
-
-        } else if (getCode == 404) {
-            data = new JSONObject();
-            data.put("devices", new JSONArray());
-
-        } else {
-            throw new Exception(
-                "GitHub GET HTTP " + getCode + ": " + readBody(get)
-            );
-        }
-
-        JSONArray devices = data.optJSONArray("devices");
-        if (devices == null) devices = new JSONArray();
-
-        boolean found = false;
-
-        for (int i = 0; i < devices.length(); i++) {
-            JSONObject item = devices.optJSONObject(i);
-
-            if (
-                item != null &&
-                deviceHash.equalsIgnoreCase(item.optString("hash"))
-            ) {
-                item.put("active", true);
-                found = true;
-            }
-        }
-
-        if (!found) {
-            JSONObject item = new JSONObject();
-            item.put("hash", deviceHash);
-            item.put("active", true);
-            devices.put(item);
-        }
-
-        data.put("devices", devices);
-        data.put("updatedAt", System.currentTimeMillis());
-
-        JSONObject payload = new JSONObject();
-        payload.put("message", "Liberar acesso StreamTV");
-        payload.put(
-            "content",
-            Base64.encodeToString(
-                data.toString(2).getBytes(StandardCharsets.UTF_8),
-                Base64.NO_WRAP
-            )
-        );
-        payload.put("branch", BRANCH);
-
-        if (sha != null) payload.put("sha", sha);
-
-        String putApi =
-            "https://api.github.com/repos/" +
-            OWNER + "/" + REPO +
-            "/contents/" + PATH;
-
-        HttpURLConnection put = open(putApi, "PUT", token);
-        put.setDoOutput(true);
-        put.setRequestProperty(
+        c.setRequestProperty(
             "Content-Type",
             "application/json; charset=utf-8"
         );
+        c.setRequestProperty(
+            "x-admin-key",
+            adminKey
+        );
 
-        try (OutputStream out = put.getOutputStream()) {
+        JSONObject payload = new JSONObject();
+        payload.put("device_hash", deviceHash);
+        payload.put("active", true);
+
+        try (OutputStream out = c.getOutputStream()) {
             out.write(
                 payload.toString().getBytes(StandardCharsets.UTF_8)
             );
         }
 
-        int putCode = put.getResponseCode();
+        int code = c.getResponseCode();
 
-        if (putCode != 200 && putCode != 201) {
-            if (putCode == 403) {
-                throw new Exception(
-                    "Token sem permissão para gravar. No GitHub, selecione este repositório e deixe Contents como Read and write."
-                );
+        if (code != 200) {
+            String body = readBody(c);
+
+            if (code == 401) {
+                throw new Exception("Chave Admin inválida.");
             }
 
             throw new Exception(
-                "GitHub PUT HTTP " + putCode + ": " + readBody(put)
+                "Backend HTTP " + code + ": " + body
             );
         }
-    }
-
-    private HttpURLConnection open(
-        String url,
-        String method,
-        String token
-    ) throws Exception {
-
-        HttpURLConnection c =
-            (HttpURLConnection) new URL(url).openConnection();
-
-        c.setRequestMethod(method);
-        c.setConnectTimeout(15000);
-        c.setReadTimeout(20000);
-        c.setRequestProperty(
-            "Accept",
-            "application/vnd.github+json"
-        );
-        c.setRequestProperty(
-            "Authorization",
-            "Bearer " + token
-        );
-        c.setRequestProperty(
-            "X-GitHub-Api-Version",
-            "2022-11-28"
-        );
-        c.setRequestProperty(
-            "User-Agent",
-            "StreamTV-Admin"
-        );
-
-        return c;
     }
 
     private String readBody(HttpURLConnection c)
