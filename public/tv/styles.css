@@ -572,14 +572,14 @@ body,
 
 .access-qr {
   display: block;
-  width: 214px;
-  height: 214px;
+  width: 220px;
+  height: auto;
+  max-width: 220px;
   margin: 0 auto 12px;
-  padding: 4px;
+  padding: 0;
   border: 0;
   border-radius: 10px;
   background: #fff;
-  object-fit: contain;
   image-rendering: pixelated;
 }
 
@@ -623,4 +623,9 @@ body,
   color: #f7b955;
   font-size: 14px;
   font-weight: 800;
+}
+
+
+.access-permanent .access-gate {
+  display: none !important;
 }
