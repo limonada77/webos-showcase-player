@@ -35,6 +35,9 @@
   var ACCESS_KEY =
     "sb_publishable_VUiAXt82sNXB6sDk4eeQCQ_ablSGLNc";
 
+  var PIX_CHECKOUT_URL =
+    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-checkout";
+
   function normalizeDeviceId(value) {
     var raw = String(value || "").trim().toUpperCase();
     var hex = raw.replace(/[^0-9A-F]/g, "");
@@ -245,9 +248,75 @@
       state.accessTimer = null;
     }
 
+    if (state.pixTimer) {
+      clearInterval(state.pixTimer);
+      state.pixTimer = null;
+    }
+
     if (state.screen !== "menu") {
       goMenu();
     }
+  }
+
+  function loadPixCheckout() {
+    if (!state.accessLocked || !state.accessHash) return;
+
+    var qr = $("#access-qr");
+    var paymentStatus = $("#access-payment-status");
+
+    fetch(
+      PIX_CHECKOUT_URL,
+      {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_hash: state.accessHash
+        })
+      }
+    )
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || data.ready !== true || !data.qr_data_url) {
+          if (qr) {
+            qr.removeAttribute("src");
+            qr.style.display = "none";
+          }
+
+          if (paymentStatus) {
+            paymentStatus.textContent =
+              "PIX automático aguardando ativação.";
+          }
+
+          return;
+        }
+
+        if (qr) {
+          qr.src = data.qr_data_url;
+          qr.style.display = "block";
+        }
+
+        if (paymentStatus) {
+          paymentStatus.textContent =
+            "Escaneie o QR Code e pague R$ 25,00. A liberação é automática.";
+        }
+      })
+      .catch(function () {
+        if (qr) {
+          qr.removeAttribute("src");
+          qr.style.display = "none";
+        }
+
+        if (paymentStatus) {
+          paymentStatus.textContent =
+            "PIX automático temporariamente indisponível.";
+        }
+      });
   }
 
   function checkAccessNow() {
@@ -324,10 +393,14 @@
       }
     } catch (e) {}
 
+    loadPixCheckout();
     checkAccessNow();
 
     state.accessTimer =
       setInterval(checkAccessNow, 500);
+
+    state.pixTimer =
+      setInterval(loadPixCheckout, 10000);
   }
 
   /* ---------------- Estado ---------------- */
@@ -347,7 +420,8 @@
     accessLocked: true,
     accessDeviceId: "",
     accessHash: "",
-    accessTimer: null
+    accessTimer: null,
+    pixTimer: null
   };
 
   /* ---------------- Cache rápido ---------------- */
