@@ -1,0 +1,67 @@
+name: DarkTV Android Mobile
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "public/tv/**"
+      - "android-mobile/**"
+      - ".github/workflows/android-mobile.yml"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Sincronizar DarkTV
+        run: |
+          rm -rf android-mobile/app/src/main/assets/www
+          mkdir -p android-mobile/app/src/main/assets/www
+          cp -a public/tv/. android-mobile/app/src/main/assets/www/
+          rm -f android-mobile/app/src/main/assets/www/appinfo.json
+
+          echo "APP.JS:"
+          sha256sum public/tv/app.js android-mobile/app/src/main/assets/www/app.js
+
+          echo "STYLES.CSS:"
+          sha256sum public/tv/styles.css android-mobile/app/src/main/assets/www/styles.css
+
+          echo "QR PIX:"
+          sha256sum public/tv/pix-qr.svg android-mobile/app/src/main/assets/www/pix-qr.svg
+
+      - name: Gerar APK
+        working-directory: android-mobile
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Conferir APK
+        run: |
+          mkdir -p apk-out
+          cp android-mobile/app/build/outputs/apk/release/app-release.apk apk-out/DarkTV-Mobile.apk
+          ls -lh apk-out
+          sha256sum apk-out/DarkTV-Mobile.apk
+
+      - name: Enviar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DarkTV-Android-Mobile
+          path: apk-out/DarkTV-Mobile.apk
+          if-no-files-found: error
