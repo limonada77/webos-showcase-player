@@ -1,0 +1,47 @@
+name: Corrigir teclado do Admin
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/fix-admin-keyboard.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Aplicar correção
+        run: python3 scripts/fix_admin_keyboard.py
+
+      - name: Atualizar versão do Admin
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android-admin/app/build.gradle')
+          s=p.read_text()
+          import re
+          s=re.sub(r'versionCode\s+(\d+)', lambda m: f'versionCode {int(m.group(1))+1}', s, count=1)
+          m=re.search(r'versionName\s+"(\d+)\.(\d+)\.(\d+)"', s)
+          if m:
+              a,b,c=map(int,m.groups())
+              s=s[:m.start()] + f'versionName "{a}.{b}.{c+1}"' + s[m.end():]
+          p.write_text(s)
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android-admin/app/src/main/java/com/darktv/admin/MainActivity.java android-admin/app/build.gradle
+          git commit -m "Corrigir digitação contínua no DarkTV Admin"
+          git push origin main
