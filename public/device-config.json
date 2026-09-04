@@ -1,0 +1,83 @@
+{
+  "version": 2,
+  "devices": [
+    {
+      "hash": "d22b67df5ff1187663244fdd7e368d97555a8fcbd2f5f9ef75f667e23a33fcf8",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "31be7c9f864556f42e2548756b7dfad813deea98ad7bca21b50987a9d48b6dc9",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "1634bda26219415f090e5d8a770b06a63f223bed31cf9fc620f43a3434d5d9a1",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "dc3f840ae92cb48befd00d92b2f1d50fbe756488bcabf117396c39e3a3947c58",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "d48b1ab7a231cd18cead32f1834c34ec91b389ba4a1948296d65c6a1a6d9634b",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "e77bd1b07d6d90e0061bb344e403d5f4dc2e283a68f99fc036edb981c20c5bdc",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "5454a22a437167b92f1f1b12d2756193388b67375a08d49d046b68941a005d2b",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "4033f8ba37592d139318295b09f9279aa1aae7c55b519a0e28445514407f4526",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "586d724c51d1cab3f2d4ce0a1cbb10680d9245f6c86058ffa73f795c5e3ec7d0",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "edd97511a07a154d5ff0286b6c9d8897ab95e10363da0edca86087ce9633dcd2",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    },
+    {
+      "hash": "309bd2d5d16afa67bc52a47df655100965c956b2681ae5219d386f585fb5df79",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "legacy"
+    }
+  ],
+  "updatedAt": "2026-09-04T19:42:06.655Z"
+}
