@@ -325,7 +325,7 @@
     checkAccessNow();
 
     state.accessTimer =
-      setInterval(checkAccessNow, 500);
+      setInterval(checkAccessNow, 1500);
   }
 
   /* ---------------- Estado ---------------- */
