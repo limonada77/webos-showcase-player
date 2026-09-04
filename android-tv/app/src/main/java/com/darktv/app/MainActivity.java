@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -12,6 +13,12 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import java.net.NetworkInterface;
+import java.security.MessageDigest;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 
 /*
  * DarkTV — casca Android TV que carrega exatamente o mesmo
@@ -72,6 +79,11 @@ public class MainActivity extends Activity {
     /* Ponte JS -> Android (window.AndroidTV.exit()). */
     private class Bridge {
         @JavascriptInterface
+        public String getDeviceId() {
+            return resolveDeviceId();
+        }
+
+        @JavascriptInterface
         public void exit() {
             runOnUiThread(new Runnable() {
                 @Override
@@ -80,6 +92,72 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    private String resolveDeviceId() {
+        try {
+            List<NetworkInterface> list =
+                Collections.list(NetworkInterface.getNetworkInterfaces());
+
+            for (NetworkInterface nif : list) {
+                String name = nif.getName();
+
+                if (!"wlan0".equalsIgnoreCase(name) &&
+                    !"eth0".equalsIgnoreCase(name)) {
+                    continue;
+                }
+
+                byte[] mac = nif.getHardwareAddress();
+
+                if (mac != null && mac.length >= 6) {
+                    return formatDeviceBytes(mac);
+                }
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            String androidId =
+                Settings.Secure.getString(
+                    getContentResolver(),
+                    Settings.Secure.ANDROID_ID
+                );
+
+            if (androidId == null) {
+                androidId = "darktv-android-tv";
+            }
+
+            MessageDigest digest =
+                MessageDigest.getInstance("SHA-256");
+
+            byte[] bytes =
+                digest.digest(androidId.getBytes("UTF-8"));
+
+            bytes[0] =
+                (byte) ((bytes[0] | 0x02) & 0xFE);
+
+            return formatDeviceBytes(bytes);
+
+        } catch (Exception ignored) {
+            return "02:00:00:00:00:01";
+        }
+    }
+
+    private String formatDeviceBytes(byte[] bytes) {
+        StringBuilder out = new StringBuilder();
+
+        for (int i = 0; i < 6 && i < bytes.length; i++) {
+            if (i > 0) out.append(":");
+
+            out.append(
+                String.format(
+                    Locale.US,
+                    "%02X",
+                    bytes[i] & 0xFF
+                )
+            );
+        }
+
+        return out.toString();
     }
 
     private void sendKey(int keyCode) {

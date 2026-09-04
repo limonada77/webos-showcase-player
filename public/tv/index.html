@@ -8,6 +8,32 @@
   </head>
   <body>
     <div id="app">
+      <div id="access-gate" class="access-gate">
+        <div class="access-modal">
+          <div class="access-brand">Stream<span>TV</span></div>
+          <div class="access-title">Liberação de acesso</div>
+          <div class="access-price">R$ 25,00</div>
+
+          <img class="access-qr" src="pix-qr.png" alt="QR Code PIX" />
+
+          <div class="access-label">PIX / E-mail</div>
+          <input
+            class="access-copy"
+            type="text"
+            readonly
+            value="tyufghcydfhy@gmail.com"
+          />
+
+          <div class="access-device-box">
+            <div class="access-label">MAC / ID do dispositivo</div>
+            <div id="access-device-id" class="access-device-id">Gerando...</div>
+          </div>
+
+          <div id="access-status" class="access-status">
+            Aguardando liberação...
+          </div>
+        </div>
+      </div>
       <!-- LOGIN -->
       <section id="screen-login" class="screen">
         <div class="login-bg"></div>

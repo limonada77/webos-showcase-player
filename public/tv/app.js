@@ -28,6 +28,271 @@
 
   function esc(str) { return String(str == null ? "" : str); }
 
+  /* ERICKTV_ACCESS_GATE_V1 */
+  var ACCESS_URL =
+    "https://raw.githubusercontent.com/limonada77/webos-showcase-player/main/public/access.json";
+
+  function normalizeDeviceId(value) {
+    var raw = String(value || "").trim().toUpperCase();
+    var hex = raw.replace(/[^0-9A-F]/g, "");
+
+    if (hex.length === 12) {
+      return hex.replace(/(..)(?=.)/g, "$1:");
+    }
+
+    return raw;
+  }
+
+  function sha256hex(ascii) {
+    var rightRotate = function (value, amount) {
+      return (value >>> amount) | (value << (32 - amount));
+    };
+    var mathPow = Math.pow;
+    var maxWord = mathPow(2, 32);
+    var lengthProperty = "length";
+    var i, j;
+    var result = "";
+    var words = [];
+    var asciiBitLength = ascii[lengthProperty] * 8;
+
+    var hash = sha256hex.h = sha256hex.h || [];
+    var k = sha256hex.k = sha256hex.k || [];
+    var primeCounter = k[lengthProperty];
+    var isComposite = {};
+
+    for (var candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (i = 0; i < 313; i += candidate) {
+          isComposite[i] = candidate;
+        }
+        hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+        k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+      }
+    }
+
+    ascii += "\x80";
+    while (ascii[lengthProperty] % 64 - 56) ascii += "\x00";
+
+    for (i = 0; i < ascii[lengthProperty]; i++) {
+      j = ascii.charCodeAt(i);
+      if (j >> 8) return "";
+      words[i >> 2] |= j << ((3 - i) % 4) * 8;
+    }
+
+    words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
+    words[words[lengthProperty]] = asciiBitLength;
+
+    for (j = 0; j < words[lengthProperty];) {
+      var w = words.slice(j, j += 16);
+      var oldHash = hash;
+      hash = hash.slice(0, 8);
+
+      for (i = 0; i < 64; i++) {
+        var w15 = w[i - 15];
+        var w2 = w[i - 2];
+        var a = hash[0];
+        var e = hash[4];
+
+        var temp1 =
+          hash[7] +
+          (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) +
+          ((e & hash[5]) ^ ((~e) & hash[6])) +
+          k[i] +
+          (w[i] =
+            (i < 16)
+              ? w[i]
+              : (
+                  w[i - 16] +
+                  (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +
+                  w[i - 7] +
+                  (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+                ) | 0
+          );
+
+        var temp2 =
+          (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) +
+          ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+
+        hash = [(temp1 + temp2) | 0].concat(hash);
+        hash[4] = (hash[4] + temp1) | 0;
+      }
+
+      for (i = 0; i < 8; i++) {
+        hash[i] = (hash[i] + oldHash[i]) | 0;
+      }
+    }
+
+    for (i = 0; i < 8; i++) {
+      for (j = 3; j + 1; j--) {
+        var b = (hash[i] >> (j * 8)) & 255;
+        result += (b < 16 ? "0" : "") + b.toString(16);
+      }
+    }
+
+    return result;
+  }
+
+  function generateLocalDeviceId() {
+    var saved = "";
+
+    try {
+      saved = LS.getItem("stv_device_id_v1") || "";
+    } catch (e) {}
+
+    if (saved) return normalizeDeviceId(saved);
+
+    var bytes = [];
+
+    try {
+      if (window.crypto && window.crypto.getRandomValues) {
+        var arr = new Uint8Array(6);
+        window.crypto.getRandomValues(arr);
+
+        for (var i = 0; i < arr.length; i++) {
+          bytes.push(arr[i]);
+        }
+      }
+    } catch (e) {}
+
+    while (bytes.length < 6) {
+      bytes.push(Math.floor(Math.random() * 256));
+    }
+
+    bytes[0] = (bytes[0] | 2) & 254;
+
+    var id = bytes.map(function (n) {
+      var s = n.toString(16).toUpperCase();
+      return s.length < 2 ? "0" + s : s;
+    }).join(":");
+
+    try {
+      LS.setItem("stv_device_id_v1", id);
+    } catch (e) {}
+
+    return id;
+  }
+
+  function getDeviceId() {
+    try {
+      if (
+        window.AndroidTV &&
+        typeof window.AndroidTV.getDeviceId === "function"
+      ) {
+        var nativeId = window.AndroidTV.getDeviceId();
+        if (nativeId) return normalizeDeviceId(nativeId);
+      }
+    } catch (e) {}
+
+    return generateLocalDeviceId();
+  }
+
+  function accessGrantMatches(data, hash) {
+    var list =
+      data && Array.isArray(data.devices)
+        ? data.devices
+        : [];
+
+    for (var i = 0; i < list.length; i++) {
+      var entry = list[i];
+
+      if (
+        typeof entry === "string" &&
+        String(entry).toLowerCase() === hash
+      ) {
+        return true;
+      }
+
+      if (
+        entry &&
+        entry.active !== false &&
+        String(entry.hash || "").toLowerCase() === hash
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function unlockAccess() {
+    state.accessLocked = false;
+
+    try {
+      LS.setItem(
+        "stv_access_granted_hash",
+        state.accessHash || ""
+      );
+    } catch (e) {}
+
+    var gate = $("#access-gate");
+
+    if (gate) {
+      gate.classList.add("unlocked");
+
+      setTimeout(function () {
+        gate.style.display = "none";
+      }, 220);
+    }
+
+    if (state.accessTimer) {
+      clearInterval(state.accessTimer);
+      state.accessTimer = null;
+    }
+  }
+
+  function checkAccessNow() {
+    if (!state.accessLocked) return;
+
+    var status = $("#access-status");
+
+    fetch(
+      ACCESS_URL + "?ts=" + Date.now(),
+      { method: "GET", cache: "no-store" }
+    )
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (accessGrantMatches(data, state.accessHash)) {
+          if (status) status.textContent = "Acesso liberado.";
+          unlockAccess();
+          return;
+        }
+
+        if (status) status.textContent = "Aguardando liberação...";
+      })
+      .catch(function () {
+        if (status) status.textContent = "Aguardando liberação...";
+      });
+  }
+
+  function initAccessGate() {
+    var id = getDeviceId();
+    var normalized = normalizeDeviceId(id);
+
+    state.accessDeviceId = normalized;
+    state.accessHash = sha256hex(normalized);
+
+    var el = $("#access-device-id");
+    if (el) el.textContent = normalized;
+
+    try {
+      if (
+        LS.getItem("stv_access_granted_hash") ===
+        state.accessHash
+      ) {
+        unlockAccess();
+        return;
+      }
+    } catch (e) {}
+
+    checkAccessNow();
+
+    state.accessTimer =
+      setInterval(checkAccessNow, 3500);
+  }
+
   /* ---------------- Estado ---------------- */
   var state = {
     profile: null,           // {host, user, pass}
@@ -41,7 +306,11 @@
     season: null,
     playing: null,
     hls: null,
-    lastFocus: {}
+    lastFocus: {},
+    accessLocked: true,
+    accessDeviceId: "",
+    accessHash: "",
+    accessTimer: null
   };
 
   /* ---------------- Cache rápido ---------------- */
@@ -2011,6 +2280,12 @@
     var k = e.keyCode;
     var typing = document.activeElement && document.activeElement.tagName === "INPUT";
 
+    if (state.accessLocked) {
+      e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+      return;
+    }
+
     if (state.screen === "player") {
       e.preventDefault();
       if (k === KEY.BACK || k === KEY.ESC || k === KEY.BACKSPACE || k === KEY.STOP) return exitPlayer();
@@ -2129,6 +2404,7 @@
 
   /* ---------------- Bind ---------------- */
   function init() {
+    initAccessGate();
     video = $("#video");
     /* Histórico persistente: não limpar ao iniciar. */
 
