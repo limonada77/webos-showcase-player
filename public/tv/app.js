@@ -3335,7 +3335,7 @@
         var go = t.dataset.go;
 
         if (go === "highlights") {
-          openListLogin();
+          openLists();
           return;
         }
 
