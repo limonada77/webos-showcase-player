@@ -27,7 +27,11 @@
     {
       "hash": "9d230c750a39b8d8ce664fcee02c515e0df9635ea7b53e0cc1959e14c125828a",
       "active": true
+    },
+    {
+      "hash": "108da3c3322973897e6b99b59e114422e6a5e16ff96c9097170362336bae73ca",
+      "active": true
     }
   ],
-  "updatedAt": 1788540590799
+  "updatedAt": 1788541088577
 }
