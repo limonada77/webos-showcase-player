@@ -209,6 +209,11 @@
     var list = focusables();
     if (!list.length) return;
     if (!current || list.indexOf(current) === -1) { setFocus(list[0]); return; }
+    /* Na lateral de categorias, ▲ ▼ nunca saem da lista; só ▶ vai para os conteúdos. */
+    var inCats = current.closest && current.closest(".cats");
+    if (inCats && (dir === "up" || dir === "down")) {
+      list = list.filter(function (el) { return inCats.contains(el); });
+    }
     var cr = current.getBoundingClientRect();
     var cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
     var best = null, bestScore = Infinity;
@@ -410,13 +415,11 @@
     var strip = track ? track.parentNode : null;
     if (!track || !strip) return;
     track.innerHTML = "";
-    var items = getContinue();
+    /* Na tela inicial só mostramos os recém-adicionados;
+       "Continuar assistindo" fica apenas dentro das categorias. */
+    var items = recentlyAdded(state.movies.items || [], 20);
     var kindOf = function (it) { return it._kind || (it.series_id ? "series" : (it.stream_type === "live" ? "live" : "movie")); };
-    var title = "Continuar assistindo";
-    if (!items.length) {
-      items = (state.movies.items || []).slice(0, 20);
-      title = "Adicionados recentemente";
-    }
+    var title = "Adicionados recentemente";
     if (!items.length) { strip.classList.add("empty"); }
     else {
       strip.classList.remove("empty");
@@ -591,7 +594,7 @@
     show("search");
   }
 
-  function openGrid(kind) {
+  function openGrid(kind, startCat) {
     state.gridKind = kind;
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
     var catBox = $("#cat-list");
@@ -624,14 +627,22 @@
       b.appendChild(n); b.appendChild(k);
       b.addEventListener("click", function () { selectCat(kind, c, b); });
       catBox.appendChild(b);
-      var isDefault = kind === "live" ? c.category_id === "__all" : c.category_id === "__recent";
-      if (isDefault) { defaultBtn = b; defaultCat = c; }
+      var wanted = startCat || (kind === "live" ? "__all" : "__recent");
+      if (String(c.category_id) === wanted) { defaultBtn = b; defaultCat = c; }
     });
     catBox.scrollTop = 0;
-    /* Sempre abre em "Recentes adicionados" (ou "Todos" na TV ao vivo). */
+    /* Sempre abre em "Recentes adicionados" (ou "Todos" na TV ao vivo),
+       a não ser que uma categoria específica tenha sido pedida. */
     selectCat(kind, defaultCat, defaultBtn);
     state.lastFocus.grid = defaultBtn;
     show("grid");
+    if (startCat) {
+      /* Ex.: ao sair de um conteúdo, cai direto no primeiro card de "Continuar assistindo". */
+      setTimeout(function () {
+        var first = $("#grid-items .card");
+        if (first) { catBox.scrollTop = 0; defaultBtn.classList.add("active"); setFocus(first); }
+      }, 60);
+    }
   }
 
   function selectCat(kind, cat, btn) {
@@ -831,9 +842,10 @@
   function moveOsdSel(dir) {
     var list = osdButtons();
     if (!list.length) return;
-    osdSel = dir === "down" ? osdSel + 1 : osdSel - 1;
-    if (osdSel < -1) osdSel = list.length - 1;
-    if (osdSel > list.length - 1) osdSel = -1;
+    if (dir === "down") { if (osdSel < 0) osdSel = 0; }
+    else if (dir === "up") { osdSel = -1; }
+    else if (dir === "right") { osdSel = Math.min(osdSel + 1, list.length - 1); }
+    else if (dir === "left") { osdSel = Math.max(osdSel - 1, 0); }
     renderOsdSel();
     showOsd();
   }
@@ -1069,9 +1081,23 @@
     }
 
 
+    var wasKind = state.playing ? state.playing.kind : null;
+    var hadProgress = !!(state.playing && wasKind !== "live" && video && video.currentTime > 30);
+
     destroyPlayer();
 
     var origin = state.playerOrigin;
+
+    if (hadProgress && (wasKind === "movie" || wasKind === "series")) {
+      /* Parou no meio: volta direto para "Continuar assistindo" da categoria. */
+      state.playerOrigin = null;
+      state.playing = null;
+      state.detail = null;
+      state.detailOrigin = null;
+      state.prevGrid = "grid";
+      openGrid(wasKind, "__cont");
+      return;
+    }
 
     /*
      * Limpa primeiro para nunca reaproveitar
@@ -1199,10 +1225,15 @@
       e.preventDefault();
       if (k === KEY.BACK || k === KEY.ESC || k === KEY.BACKSPACE || k === KEY.STOP) return exitPlayer();
       if (k === KEY.UP || k === KEY.DOWN) return moveOsdSel(k === KEY.DOWN ? "down" : "up");
+      var osdOpen = $("#player-osd").classList.contains("show");
       if (k === KEY.ENTER || k === KEY.PLAY || k === KEY.PAUSE || k === KEY.PLAYPAUSE) {
         var sel = osdButtons()[osdSel];
-        if (sel && $("#player-osd").classList.contains("show")) { sel.click(); return; }
+        if (sel && osdOpen) { sel.click(); return; }
         return togglePlay();
+      }
+      /* Com um botão selecionado, ◀ ▶ trocam de botão; senão avançam/voltam 10s. */
+      if ((k === KEY.RIGHT || k === KEY.LEFT) && osdOpen && osdSel >= 0) {
+        return moveOsdSel(k === KEY.RIGHT ? "right" : "left");
       }
       if (k === KEY.RIGHT || k === KEY.FF) return seek(10);
       if (k === KEY.LEFT || k === KEY.RW) return seek(-10);

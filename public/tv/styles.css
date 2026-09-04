@@ -174,25 +174,26 @@ input.focused { border-color: #fff; background: #2a2a30; }
 .cat.active .cat-count { color: #111; }
 .cat.focused { background: #fff; color: #000; box-shadow: var(--focus); transform: translateX(6px); }
 .cat.focused .cat-count { color: #000; }
-.grid-main { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 34px 40px 0 26px; }
-.grid-title { font-size: 34px; font-weight: 800; margin: 0 0 18px; }
+.grid-main { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 34px 14px 0 20px; }
+.grid-title { font-size: 34px; font-weight: 800; margin: 0 0 14px; }
+/* Capas próximas umas das outras e ocupando até perto da borda da TV (4 por linha). */
 .grid {
-  flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 26px 22px;
-  padding: 10px 6px 60px; overflow: hidden;
+  flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 18px 12px;
+  padding: 10px 8px 60px 8px; overflow: hidden;
 }
 .grid .card, .grid .card.poster {
-  width: 190px; height: auto; background: transparent; border-radius: 0; overflow: visible;
+  width: calc((100% - 36px) / 4); height: auto; background: transparent; border-radius: 0; overflow: visible;
 }
 .grid .card img, .grid .card .ph {
-  width: 100%; height: 270px; border-radius: 10px; background: #1c1c22;
+  width: 100%; height: 300px; border-radius: 8px; background: #1c1c22;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
-.grid .card:not(.poster) img, .grid .card:not(.poster) .ph { height: 108px; }
+.grid .card:not(.poster) img, .grid .card:not(.poster) .ph { height: 120px; }
 .grid .card .cap {
   position: static; background: none; padding: 9px 2px 0; font-size: 15px; font-weight: 700;
   color: #f4f4f5; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
-.grid .card.focused { transform: scale(1.06); box-shadow: none; }
+.grid .card.focused { transform: scale(1.04); box-shadow: none; }
 .grid .card.focused img, .grid .card.focused .ph { box-shadow: var(--focus); }
 #screen-search .grid { position: absolute; top: 150px; left: 0; right: 0; bottom: 0; padding-left: 40px; }
 
