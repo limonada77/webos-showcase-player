@@ -32,7 +32,7 @@ jobs:
       - name: Gerar IPK
         run: |
           mkdir -p artifacts
-          ares-package --no-minify public/tv -o artifacts
+          ares-package public/tv -o artifacts
           ls -lh artifacts
           sha256sum artifacts/*.ipk
 
