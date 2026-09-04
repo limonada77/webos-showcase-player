@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
     private static final String OWNER = "limonada77";
     private static final String REPO = "webos-showcase-player";
     private static final String PATH = "public/access.json";
-    private static final String BRANCH = "access-control";
+    private static final String BRANCH = "main";
 
     private EditText deviceInput;
     private EditText tokenInput;
