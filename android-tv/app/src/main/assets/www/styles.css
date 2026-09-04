@@ -151,20 +151,50 @@ input.focused { border-color: #fff; background: #2a2a30; }
 }
 .card.focused { transform: scale(1.12); box-shadow: var(--focus); z-index: 5; }
 
-/* ---------- GRID ---------- */
-.grid-wrap { position: absolute; top: 74px; left: 0; right: 0; bottom: 0; display: flex; }
-.cats { width: 280px; padding: 10px 12px 30px 40px; overflow: hidden; border-right: 1px solid rgba(255, 255, 255, 0.06); }
+/* ---------- GRID (estilo lateral + pôsteres, como Assist+) ---------- */
+.grid-bg {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  background:
+    radial-gradient(900px 500px at 75% 30%, rgba(210, 40, 60, 0.28), transparent 70%),
+    linear-gradient(160deg, #1a0b10 0%, #0d0d12 55%, #08080a 100%);
+}
+.grid-wrap { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; }
+.cats { width: 330px; flex: 0 0 330px; padding: 40px 14px 40px 22px; overflow: hidden; }
 .cat {
-  display: block; width: 100%; text-align: left; background: transparent; border: 0;
-  color: var(--muted); font-size: 15px; padding: 10px 14px; border-radius: var(--radius); cursor: pointer;
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: rgba(12, 12, 16, 0.86); border: 0; color: var(--text);
+  font-size: 15px; font-weight: 700; padding: 11px 14px; margin-bottom: 8px;
+  border-radius: 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
-.cat.active { color: var(--text); background: rgba(255, 255, 255, 0.08); }
-.cat.focused { background: #fff; color: #000; box-shadow: var(--focus); }
+.cat .ico { width: 20px; height: 20px; flex: 0 0 20px; }
+.cat .cat-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 0.2px; }
+.cat-search .cat-name, .cat.active .cat-name { text-transform: none; }
+.cat .cat-count { color: #d4d4d8; font-weight: 700; font-size: 14px; }
+.cat.active { background: #fff; color: #111; }
+.cat.active .cat-count { color: #111; }
+.cat.focused { background: #fff; color: #000; box-shadow: var(--focus); transform: translateX(6px); }
+.cat.focused .cat-count { color: #000; }
+.grid-main { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 34px 40px 0 26px; }
+.grid-title { font-size: 34px; font-weight: 800; margin: 0 0 18px; }
 .grid {
-  flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 14px;
-  padding: 12px 40px 60px; overflow: hidden;
+  flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 26px 22px;
+  padding: 10px 6px 60px; overflow: hidden;
 }
-#screen-search .grid { position: absolute; top: 150px; left: 0; right: 0; bottom: 0; }
+.grid .card, .grid .card.poster {
+  width: 190px; height: auto; background: transparent; border-radius: 0; overflow: visible;
+}
+.grid .card img, .grid .card .ph {
+  width: 100%; height: 270px; border-radius: 10px; background: #1c1c22;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.grid .card:not(.poster) img, .grid .card:not(.poster) .ph { height: 108px; }
+.grid .card .cap {
+  position: static; background: none; padding: 9px 2px 0; font-size: 15px; font-weight: 700;
+  color: #f4f4f5; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.grid .card.focused { transform: scale(1.06); box-shadow: none; }
+.grid .card.focused img, .grid .card.focused .ph { box-shadow: var(--focus); }
+#screen-search .grid { position: absolute; top: 150px; left: 0; right: 0; bottom: 0; padding-left: 40px; }
 
 /* ---------- SEARCH ---------- */
 .search-box { position: absolute; top: 86px; left: 40px; right: 40px; }
