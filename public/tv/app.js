@@ -693,6 +693,105 @@
     rec._kind = kind;
     rec._pos = Math.floor(pos || 0);
 
+    /*
+     * ERICKTV_SERIES_SAVE_FIX_V73
+     *
+     * Antes de salvar o episódio, recupera a série
+     * original para garantir nome e capa corretos.
+     */
+    if (kind === "series") {
+
+      var contextSeries =
+        state.detail &&
+        state.detail.kind === "series"
+          ? state.detail.item
+          : null;
+
+      /*
+       * Caso o episódio não tenha recebido series_id,
+       * recuperamos pelo contexto da tela de série.
+       */
+      if (
+        !rec._series_id &&
+        contextSeries &&
+        contextSeries.series_id
+      ) {
+
+        rec._series_id =
+          contextSeries.series_id;
+
+        rec.series_id =
+          contextSeries.series_id;
+      }
+
+
+      var seriesSource =
+        null;
+
+
+      if (
+        rec._series_id
+      ) {
+
+        var seriesCatalog =
+          state.series.items ||
+          [];
+
+
+        for (
+          var si = 0;
+          si < seriesCatalog.length;
+          si++
+        ) {
+
+          if (
+            String(
+              seriesCatalog[si].series_id
+            ) ===
+            String(
+              rec._series_id
+            )
+          ) {
+
+            seriesSource =
+              seriesCatalog[si];
+
+            break;
+          }
+        }
+      }
+
+
+      if (
+        !seriesSource &&
+        contextSeries
+      ) {
+
+        seriesSource =
+          contextSeries;
+      }
+
+
+      if (
+        seriesSource
+      ) {
+
+        rec._series_name =
+          seriesSource.name ||
+          seriesSource.title ||
+          rec._series_name ||
+          "";
+
+        rec._series_cover =
+          pickImage(
+            seriesSource
+          ) ||
+          rec._series_cover ||
+          "";
+      }
+    }
+
+
     /* Série: o cartão mostra a série, mas guarda o último episódio. */
     if (kind === "series" && rec._series_id) {
       var playName = rec.name || rec.title || "Episódio";
@@ -816,6 +915,166 @@
     show("search");
   }
 
+  /*
+   * ERICKTV_CONTINUE_CARD_V73
+   *
+   * O histórico guarda o EPISÓDIO para reprodução,
+   * mas o cartão visual de uma série sempre usa
+   * os dados da SÉRIE.
+   */
+  function continueDisplayItem(item, kind) {
+
+    if (
+      !item ||
+      kind !== "series"
+    ) {
+
+      return item;
+    }
+
+
+    var out;
+
+    try {
+
+      out =
+        JSON.parse(
+          JSON.stringify(item)
+        );
+
+    } catch (e) {
+
+      out =
+        item;
+    }
+
+
+    var seriesId =
+      out._series_id ||
+      out.series_id ||
+      null;
+
+
+    var series =
+      null;
+
+
+    if (
+      seriesId
+    ) {
+
+      var catalog =
+        state.series.items ||
+        [];
+
+
+      for (
+        var i = 0;
+        i < catalog.length;
+        i++
+      ) {
+
+        if (
+          String(
+            catalog[i].series_id
+          ) ===
+          String(
+            seriesId
+          )
+        ) {
+
+          series =
+            catalog[i];
+
+          break;
+        }
+      }
+    }
+
+
+    var seriesName =
+      (
+        series &&
+        (
+          series.name ||
+          series.title
+        )
+      ) ||
+      out._series_name ||
+      "";
+
+
+    var seriesCover =
+      (
+        series
+          ? pickImage(series)
+          : ""
+      ) ||
+      out._series_cover ||
+      "";
+
+
+    /*
+     * MUITO IMPORTANTE:
+     *
+     * NÃO alteramos stream_id/id.
+     * Eles continuam sendo o episódio.
+     */
+    if (
+      seriesId
+    ) {
+
+      out._series_id =
+        seriesId;
+
+      out.series_id =
+        seriesId;
+
+      out._resumeEpisode =
+        true;
+    }
+
+
+    if (
+      seriesName
+    ) {
+
+      out._series_name =
+        seriesName;
+
+      out.name =
+        seriesName;
+
+      out.title =
+        seriesName;
+    }
+
+
+    if (
+      seriesCover
+    ) {
+
+      out._series_cover =
+        seriesCover;
+
+      out.stream_icon =
+        seriesCover;
+
+      out.cover =
+        seriesCover;
+
+      out.series_cover =
+        seriesCover;
+
+      out.movie_image =
+        seriesCover;
+    }
+
+
+    return out;
+  }
+
+
   function openGrid(kind, startCat) {
     state.gridKind = kind;
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
@@ -831,7 +1090,23 @@
 
     var cats = [];
     if (kind !== "live") {
-      var cont = getContinue().filter(function (i) { return i._kind === kind; });
+      var cont =
+        getContinue()
+          .filter(
+            function (i) {
+              return (
+                i._kind === kind
+              );
+            }
+          )
+          .map(
+            function (i) {
+              return continueDisplayItem(
+                i,
+                kind
+              );
+            }
+          );
       cats.push({ category_id: "__cont", category_name: "Continuar assistindo", _items: cont });
       cats.push({ category_id: "__recent", category_name: "Recentes adicionados", _items: recentlyAdded(data.items, 100) });
     }
