@@ -3,10 +3,9 @@ package com.darktv.admin;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.InputType;
-import android.text.TextWatcher;
 import android.util.Base64;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -95,32 +94,23 @@ public class MainActivity extends Activity {
             InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
         );
 
-        deviceInput.addTextChangedListener(new TextWatcher() {
-            private boolean changing = false;
-
-            @Override
-            public void beforeTextChanged(
-                CharSequence s, int start, int count, int after
-            ) {}
-
-            @Override
-            public void onTextChanged(
-                CharSequence s, int start, int before, int count
-            ) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (changing) return;
-
+        /*
+         * Não formatar o MAC a cada tecla.
+         * Alterar o texto com setText() enquanto o IME está compondo
+         * interrompe a digitação em alguns teclados Android.
+         * A normalização continua acontecendo ao liberar o acesso.
+         */
+        deviceInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
                 String formatted =
-                    formatDeviceInput(s.toString());
+                    formatDeviceInput(
+                        deviceInput.getText().toString()
+                    );
 
-                if (!formatted.equals(s.toString())) {
-                    changing = true;
-                    deviceInput.setText(formatted);
-                    deviceInput.setSelection(formatted.length());
-                    changing = false;
-                }
+                deviceInput.setText(formatted);
+                deviceInput.setSelection(
+                    formatted.length()
+                );
             }
         });
 
@@ -170,7 +160,8 @@ public class MainActivity extends Activity {
         passInput = field("Senha da lista");
         passInput.setInputType(
             InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_PASSWORD
+            InputType.TYPE_TEXT_VARIATION_PASSWORD |
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         );
 
         root.addView(hostInput);
@@ -200,13 +191,15 @@ public class MainActivity extends Activity {
         adminKeyInput = field("Chave Admin DarkTV");
         adminKeyInput.setInputType(
             InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_PASSWORD
+            InputType.TYPE_TEXT_VARIATION_PASSWORD |
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         );
 
         githubTokenInput = field("Token GitHub");
         githubTokenInput.setInputType(
             InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_PASSWORD
+            InputType.TYPE_TEXT_VARIATION_PASSWORD |
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         );
 
         String savedAdminKey =
@@ -923,6 +916,13 @@ public class MainActivity extends Activity {
 
         e.setHint(hint);
         e.setTextColor(Color.WHITE);
+        e.setSingleLine(true);
+        e.setInputType(
+            InputType.TYPE_CLASS_TEXT |
+            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD |
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        );
+        e.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         e.setHintTextColor(
             Color.rgb(
                 113,
