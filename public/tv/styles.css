@@ -193,7 +193,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
   align-content: flex-start;
   justify-content: space-between;
   column-gap: 0;
-  row-gap: 64px;
+  row-gap: 0;
   padding: 10px 8px 60px 8px;
   overflow: hidden;
 }
@@ -201,6 +201,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
 .grid .card.poster {
   width: calc((100% - 132px) / 4);
   height: auto;
+  margin-bottom: 64px;
   background: transparent;
   border-radius: 0;
   overflow: visible;
@@ -212,9 +213,12 @@ input.focused { border-color: #fff; background: #2a2a30; }
 .grid .card:not(.poster) img, .grid .card:not(.poster) .ph { height: 120px; }
 .grid .card .cap {
   position: static;
+  display: block;
+  width: 100%;
+  max-width: 100%;
   background: none;
-  padding: 9px 2px 0;
-  height: 20px;
+  padding: 8px 2px 2px;
+  height: 30px;
   line-height: 20px;
   white-space: nowrap;
   overflow: hidden;
