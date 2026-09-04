@@ -342,12 +342,12 @@
      * de requisições públicas do GitHub.
      */
     accessFastUntil =
-      Date.now() + 60000;
+      Date.now() + 10000;
 
     checkAccessNow();
 
     state.accessTimer =
-      setInterval(checkAccessNow, 1500);
+      setInterval(checkAccessNow, 250);
   }
 
   /* ---------------- Estado ---------------- */
