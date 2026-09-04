@@ -29,8 +29,13 @@
   function esc(str) { return String(str == null ? "" : str); }
 
   /* ERICKTV_ACCESS_GATE_V1 */
-  var ACCESS_URL =
-    "https://raw.githubusercontent.com/limonada77/webos-showcase-player/main/public/access.json";
+  var ACCESS_API_URL =
+    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/access.json?ref=access-control";
+
+  var ACCESS_RAW_URL =
+    "https://raw.githubusercontent.com/limonada77/webos-showcase-player/access-control/public/access.json";
+
+  var accessFastUntil = 0;
 
   function normalizeDeviceId(value) {
     var raw = String(value || "").trim().toUpperCase();
@@ -251,13 +256,14 @@
     if (!state.accessLocked) return;
 
     var status = $("#access-status");
+    var useApi = Date.now() < accessFastUntil;
+    var url =
+      useApi
+        ? ACCESS_API_URL + "&ts=" + Date.now()
+        : ACCESS_RAW_URL + "?ts=" + Date.now() + "-" + Math.random();
 
     fetch(
-      ACCESS_URL +
-        "?ts=" +
-        Date.now() +
-        "-" +
-        Math.random(),
+      url,
       {
         method: "GET",
         cache: "no-store"
@@ -267,7 +273,19 @@
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
-      .then(function (data) {
+      .then(function (payload) {
+        var data = payload;
+
+        if (useApi && payload && payload.content) {
+          var raw =
+            String(payload.content)
+              .replace(/\s+/g, "");
+
+          data = JSON.parse(
+            window.atob(raw)
+          );
+        }
+
         if (accessGrantMatches(data, state.accessHash)) {
           if (status) status.textContent = "Acesso liberado.";
           unlockAccess();
@@ -317,10 +335,19 @@
       }
     } catch (e) {}
 
+    /*
+     * Durante o primeiro minuto usamos a Contents API,
+     * que reflete o commit novo quase imediatamente.
+     * Depois caímos para RAW para não estourar o limite
+     * de requisições públicas do GitHub.
+     */
+    accessFastUntil =
+      Date.now() + 60000;
+
     checkAccessNow();
 
     state.accessTimer =
-      setInterval(checkAccessNow, 400);
+      setInterval(checkAccessNow, 1500);
   }
 
   /* ---------------- Estado ---------------- */
