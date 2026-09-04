@@ -1,4 +1,9 @@
 {
-  "devices": [],
-  "updatedAt": 0
+  "devices": [
+    {
+      "hash": "d22b67df5ff1187663244fdd7e368d97555a8fcbd2f5f9ef75f667e23a33fcf8",
+      "active": true
+    }
+  ],
+  "updatedAt": 1788536769182
 }
