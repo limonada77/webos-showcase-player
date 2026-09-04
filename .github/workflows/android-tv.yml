@@ -6,6 +6,7 @@ on:
     branches:
       - main
     paths:
+      - "public/tv/**"
       - "android-tv/**"
       - ".github/workflows/android-tv.yml"
 
@@ -30,6 +31,17 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
+
+      - name: Sincronizar app da TV
+        run: |
+          rm -rf android-tv/app/src/main/assets/www
+          mkdir -p android-tv/app/src/main/assets/www
+          cp -a public/tv/. android-tv/app/src/main/assets/www/
+          rm -f android-tv/app/src/main/assets/www/appinfo.json
+          echo "APP.JS:"
+          sha256sum public/tv/app.js android-tv/app/src/main/assets/www/app.js
+          echo "STYLES.CSS:"
+          sha256sum public/tv/styles.css android-tv/app/src/main/assets/www/styles.css
 
       - name: Gerar APK
         working-directory: android-tv
