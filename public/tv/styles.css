@@ -193,7 +193,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
   align-content: flex-start;
   justify-content: space-between;
   column-gap: 0;
-  row-gap: 68px;
+  row-gap: 54px;
   padding: 10px 8px 60px 8px;
   overflow: hidden;
 }
@@ -211,8 +211,22 @@ input.focused { border-color: #fff; background: #2a2a30; }
 }
 .grid .card:not(.poster) img, .grid .card:not(.poster) .ph { height: 120px; }
 .grid .card .cap {
-  position: static; background: none; padding: 9px 2px 0; font-size: 15px; font-weight: 700;
-  color: #f4f4f5; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  position: static;
+  background: none;
+  padding: 9px 2px 0;
+  min-height: 40px;
+  max-height: 40px;
+  line-height: 20px;
+  white-space: normal;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f4f4f5;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.grid .card,
+.grid .card.poster {
+  padding-bottom: 18px;
 }
 .grid .card.focused { transform: scale(1.04); box-shadow: none; }
 .grid .card.focused img, .grid .card.focused .ph { box-shadow: var(--focus); }
