@@ -924,6 +924,49 @@
 
   function openSearch(origin) {
     state.searchOrigin = origin || null;
+
+    /* ERICKTV_SEARCH_SCOPE_V75
+     * Pesquisa aberta dentro de uma categoria fica presa
+     * ao tipo atual: filmes, séries ou canais.
+     * A busca aberta pela Home continua global.
+     */
+    state.searchKind =
+      origin === "grid"
+        ? state.gridKind
+        : null;
+
+    var input = $("#search-input");
+    var results = $("#search-results");
+    var title = $("#screen-search .grid-title");
+
+    var label =
+      state.searchKind === "movie"
+        ? "Filmes"
+        : state.searchKind === "series"
+          ? "Séries"
+          : state.searchKind === "live"
+            ? "Canais"
+            : "Tudo";
+
+    if (input) {
+      input.value = "";
+      input.placeholder =
+        state.searchKind
+          ? "Buscar em " + label.toLowerCase()
+          : "Digite o nome do filme, série ou canal";
+    }
+
+    if (results) {
+      results.innerHTML = "";
+    }
+
+    if (title) {
+      title.textContent =
+        state.searchKind
+          ? "Buscar em " + label
+          : "Buscar";
+    }
+
     setActiveTab("search");
     show("search");
   }
@@ -1215,14 +1258,60 @@
   function runSearch(q) {
     q = (q || "").trim().toLowerCase();
     var box = $("#search-results");
-    if (q.length < 2) { box.innerHTML = ""; return; }
+
+    if (q.length < 2) {
+      box.innerHTML = "";
+      return;
+    }
+
     var match = function (list) {
-      return list.filter(function (i) { return (i.name || i.title || "").toLowerCase().indexOf(q) !== -1; }).slice(0, 60);
+      return list.filter(function (i) {
+        return (i.name || i.title || "")
+          .toLowerCase()
+          .indexOf(q) !== -1;
+      }).slice(0, 60);
     };
+
     box.innerHTML = "";
-    match(state.movies.items).forEach(function (i) { box.appendChild(makeCard(i, "movie", true)); });
-    match(state.series.items).forEach(function (i) { box.appendChild(makeCard(i, "series", true)); });
-    match(state.live.items).forEach(function (i) { box.appendChild(makeCard(i, "live", false)); });
+
+    /* Busca contextual:
+     * movie  -> somente filmes
+     * series -> somente séries
+     * live   -> somente canais
+     * null   -> busca global da Home
+     */
+    if (state.searchKind === "movie") {
+      match(state.movies.items).forEach(function (i) {
+        box.appendChild(makeCard(i, "movie", true));
+      });
+      return;
+    }
+
+    if (state.searchKind === "series") {
+      match(state.series.items).forEach(function (i) {
+        box.appendChild(makeCard(i, "series", true));
+      });
+      return;
+    }
+
+    if (state.searchKind === "live") {
+      match(state.live.items).forEach(function (i) {
+        box.appendChild(makeCard(i, "live", false));
+      });
+      return;
+    }
+
+    match(state.movies.items).forEach(function (i) {
+      box.appendChild(makeCard(i, "movie", true));
+    });
+
+    match(state.series.items).forEach(function (i) {
+      box.appendChild(makeCard(i, "series", true));
+    });
+
+    match(state.live.items).forEach(function (i) {
+      box.appendChild(makeCard(i, "live", false));
+    });
   }
 
   /* ---------------- Detalhe ---------------- */
