@@ -2006,7 +2006,7 @@
   }
 
   function bindMenu() {
-    $("#screen-menu .tile").forEach(function (t) {
+    $$("#screen-menu .tile").forEach(function (t) {
       t.addEventListener("click", function () {
         var go = t.dataset.go;
 
