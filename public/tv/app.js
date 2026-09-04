@@ -30,7 +30,7 @@
 
   /* ERICKTV_ACCESS_GATE_V1 */
   var ACCESS_URL =
-    "https://raw.githubusercontent.com/limonada77/webos-showcase-player/main/public/access.json";
+    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/access.json?ref=main";
 
   function normalizeDeviceId(value) {
     var raw = String(value || "").trim().toUpperCase();
