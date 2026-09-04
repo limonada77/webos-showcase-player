@@ -193,7 +193,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
   align-content: flex-start;
   justify-content: space-between;
   column-gap: 0;
-  row-gap: 54px;
+  row-gap: 44px;
   padding: 10px 8px 60px 8px;
   overflow: hidden;
 }
@@ -223,10 +223,6 @@ input.focused { border-color: #fff; background: #2a2a30; }
   font-weight: 700;
   color: #f4f4f5;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-}
-.grid .card,
-.grid .card.poster {
-  padding-bottom: 18px;
 }
 .grid .card.focused { transform: scale(1.04); box-shadow: none; }
 .grid .card.focused img, .grid .card.focused .ph { box-shadow: var(--focus); }
