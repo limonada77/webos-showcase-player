@@ -14,15 +14,17 @@
           <div class="access-title">Liberação de acesso</div>
           <div class="access-price">R$ 25,00</div>
 
-          <img class="access-qr" src="pix-qr.svg" alt="QR Code PIX" />
-
-          <div class="access-label">PIX / E-mail</div>
-          <input
-            class="access-copy"
-            type="text"
-            readonly
-            value="tyufghcydfhy@gmail.com"
+          <img
+            id="access-qr"
+            class="access-qr"
+            alt="QR Code PIX"
+            style="display:none"
           />
+
+          <div class="access-label">Pagamento PIX automático</div>
+          <div id="access-payment-status" class="access-payment-status">
+            Preparando cobrança de R$ 25,00...
+          </div>
 
           <div class="access-device-box">
             <div class="access-label">MAC / ID do dispositivo</div>
