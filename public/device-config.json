@@ -81,11 +81,11 @@
     {
       "hash": "a022e3b9ae0660e99994817f3ad2a709455a21902aa52b06204ac82e6eaffc58",
       "active": true,
-      "duration": "month",
-      "expiresAt": "2026-10-04T20:05:14.661Z",
+      "duration": "forever",
+      "expiresAt": null,
       "source": "admin",
-      "updatedAt": 1788552315316
+      "updatedAt": 1788552415859
     }
   ],
-  "updatedAt": 1788552315316
+  "updatedAt": 1788552415859
 }
