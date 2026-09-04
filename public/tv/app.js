@@ -566,6 +566,63 @@
       });
   }
 
+  function schedulePolicyExpiry(policy) {
+    if (state.expiryTimer) {
+      clearTimeout(
+        state.expiryTimer
+      );
+      state.expiryTimer = null;
+    }
+
+    if (
+      !policy ||
+      !policy.expiresAt
+    ) {
+      return;
+    }
+
+    var expires =
+      Date.parse(
+        policy.expiresAt
+      );
+
+    if (!isFinite(expires)) {
+      return;
+    }
+
+    function arm() {
+      var remaining =
+        expires - Date.now();
+
+      if (remaining <= 0) {
+        state.expiryTimer =
+          null;
+
+        lockAccess(
+          "Acesso vencido. Renove pelo PIX ou Admin."
+        );
+
+        return;
+      }
+
+      /*
+       * setTimeout de browsers antigos tem limite
+       * perto de 24,8 dias. Para 1 mês/1 ano,
+       * rearmamos em blocos até chegar ao instante exato.
+       */
+      state.expiryTimer =
+        setTimeout(
+          arm,
+          Math.min(
+            remaining,
+            2000000000
+          )
+        );
+    }
+
+    arm();
+  }
+
   function stopLockedTimers() {
     if (state.accessTimer) {
       clearInterval(
@@ -646,6 +703,10 @@
       );
     }
 
+    schedulePolicyExpiry(
+      state.currentPolicy
+    );
+
     state.leaseTimer =
       setInterval(
         checkUnlockedLease,
@@ -683,6 +744,13 @@
         state.leaseTimer
       );
       state.leaseTimer = null;
+    }
+
+    if (state.expiryTimer) {
+      clearTimeout(
+        state.expiryTimer
+      );
+      state.expiryTimer = null;
     }
 
     var gate =
@@ -1195,6 +1263,7 @@
     accessTimer: null,
     pixTimer: null,
     leaseTimer: null,
+    expiryTimer: null,
     accessResolving: false,
     currentPolicy: null,
     remoteEntry: null,
