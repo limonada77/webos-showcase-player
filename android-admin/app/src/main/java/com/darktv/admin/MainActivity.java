@@ -333,7 +333,7 @@ public class MainActivity extends Activity {
                 updateAccessBackend(adminKey, hash, false);
 
                 try {
-                    Thread.sleep(700);
+                    Thread.sleep(3000);
                 } catch (InterruptedException ignored) {}
 
                 updateAccessBackend(adminKey, hash, true);
