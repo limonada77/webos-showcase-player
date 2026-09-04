@@ -209,10 +209,21 @@
     var list = focusables();
     if (!list.length) return;
     if (!current || list.indexOf(current) === -1) { setFocus(list[0]); return; }
-    /* Na lateral de categorias, ▲ ▼ nunca saem da lista; só ▶ vai para os conteúdos. */
+    /* ERICKTV_CATEGORY_NAV_V72
+     * ▲/▼ ficam nos gêneros; ▶ entra nos conteúdos.
+     */
     var inCats = current.closest && current.closest(".cats");
+
     if (inCats && (dir === "up" || dir === "down")) {
       list = list.filter(function (el) { return inCats.contains(el); });
+    }
+
+    if (inCats && dir === "right") {
+      var firstContent = $("#grid-items .card.focusable");
+      if (firstContent) {
+        setFocus(firstContent);
+        return;
+      }
     }
     var cr = current.getBoundingClientRect();
     var cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
@@ -603,34 +614,124 @@
     state.heroKind = item.series_id ? "series" : (item.stream_type === "live" ? "live" : "movie");
   }
 
-  /* ------------------------------------------------------------
-     Histórico APENAS da sessão atual (memória).
-     Ao sair/entrar novamente, o histórico começa vazio.
-     ------------------------------------------------------------ */
-  var sessionHistory = { cont: [], progress: {} };
+  /* ERICKTV_HISTORY_V72
+   * Continuar assistindo e progresso persistentes por conta Xtream.
+   */
+
+  function historyKey(part) {
+    var p = state.profile || {};
+    var account = String(p.host || "") + "|" + String(p.user || "");
+    return "stv_watch_v72:" + encodeURIComponent(account) + ":" + part;
+  }
+
+  function readHistory(part, fallback) {
+    try {
+      var raw = LS.getItem(historyKey(part));
+      if (!raw) return fallback;
+      var value = JSON.parse(raw);
+      return value != null ? value : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeHistory(part, value) {
+    try {
+      LS.setItem(historyKey(part), JSON.stringify(value));
+    } catch (e) {}
+  }
 
   function clearHistory() {
-    sessionHistory = { cont: [], progress: {} };
-    try { LS.removeItem("stv_continue"); } catch (e) {}
-    try { LS.removeItem("stv_progress_v1"); } catch (e) {}
+    try {
+      LS.removeItem(historyKey("continue"));
+      LS.removeItem(historyKey("progress"));
+      LS.removeItem("stv_continue");
+      LS.removeItem("stv_progress_v1");
+    } catch (e) {}
   }
 
-  /* ---------------- Continuar assistindo ---------------- */
   function getContinue() {
-    return sessionHistory.cont.slice(0);
-  }
-  function saveContinue(item, kind, pos) {
-    if (kind === "live") return;
-    var list = getContinue().filter(function (i) { return String(i.stream_id) !== String(item.stream_id); });
-    var rec = JSON.parse(JSON.stringify(item));
-    rec._kind = kind; rec._pos = pos || 0;
-    list.unshift(rec);
-    sessionHistory.cont = list.slice(0, 12);
+    var list = readHistory("continue", []);
+    return Array.isArray(list) ? list : [];
   }
 
-  /* ------- Posição de reprodução (retomar de onde parou) ------- */
+  function setContinue(list) {
+    writeHistory("continue", list.slice(0, 30));
+  }
+
+  function continueKey(item, kind) {
+    if (!item) return "";
+
+    /* Uma série inteira usa somente um cartão. */
+    if (kind === "series" && (item._series_id || item.series_id)) {
+      return "series:" + String(item._series_id || item.series_id);
+    }
+
+    return String(kind || item._kind || "movie") + ":" +
+      String(item.stream_id || item.id || item.name || "");
+  }
+
+  function removeContinue(item, kind) {
+    var key = continueKey(item, kind);
+    var list = getContinue().filter(function (old) {
+      var oldKey = old._continueKey || continueKey(old, old._kind || kind);
+      return oldKey !== key;
+    });
+    setContinue(list);
+  }
+
+  function saveContinue(item, kind, pos) {
+    if (!item || kind === "live") return;
+
+    var rec;
+    try {
+      rec = JSON.parse(JSON.stringify(item));
+    } catch (e) {
+      return;
+    }
+
+    rec._kind = kind;
+    rec._pos = Math.floor(pos || 0);
+
+    /* Série: o cartão mostra a série, mas guarda o último episódio. */
+    if (kind === "series" && rec._series_id) {
+      var playName = rec.name || rec.title || "Episódio";
+
+      rec._resumeEpisode = true;
+      rec._episode_play_name = playName;
+      rec.series_id = rec._series_id;
+      rec._continueKey = "series:" + String(rec._series_id);
+
+      rec.name = rec._series_name || playName;
+      rec.title = rec.name;
+
+      if (rec._series_cover) {
+        rec.stream_icon = rec._series_cover;
+        rec.cover = rec._series_cover;
+        rec.series_cover = rec._series_cover;
+        rec.movie_image = rec._series_cover;
+      }
+    } else {
+      rec._continueKey = continueKey(rec, kind);
+    }
+
+    var key = rec._continueKey || continueKey(rec, kind);
+    var list = getContinue().filter(function (old) {
+      var oldKey = old._continueKey || continueKey(old, old._kind || kind);
+      return oldKey !== key;
+    });
+
+    list.unshift(rec);
+    setContinue(list);
+  }
+
   function getProgressMap() {
-    return sessionHistory.progress;
+    var map = readHistory("progress", {});
+    return map && typeof map === "object" && !Array.isArray(map) ? map : {};
+  }
+
+  function setProgressMap(map) {
+    writeHistory("progress", map);
   }
 
   function progressKey(item, kind) {
@@ -640,15 +741,22 @@
   function saveProgress(item, kind, pos, dur) {
     if (kind === "live" || !item) return;
     if (!isFinite(pos) || pos < 15) return;
-    var map = getProgressMap();
-    /* Terminou: não guarda posição. */
-    if (isFinite(dur) && dur > 0 && pos > dur - 60) {
-      delete map[progressKey(item, kind)];
-    } else {
-      map[progressKey(item, kind)] = { pos: Math.floor(pos), dur: Math.floor(dur || 0), at: Date.now() };
-    }
-  }
 
+    var map = getProgressMap();
+    var key = progressKey(item, kind);
+
+    if (isFinite(dur) && dur > 0 && pos > dur - 60) {
+      delete map[key];
+    } else {
+      map[key] = {
+        pos: Math.floor(pos),
+        dur: Math.floor(dur || 0),
+        at: Date.now()
+      };
+    }
+
+    setProgressMap(map);
+  }
   function getProgress(item, kind) {
     var rec = getProgressMap()[progressKey(item, kind)];
     return rec && rec.pos > 15 ? rec.pos : 0;
@@ -830,15 +938,100 @@
   }
 
   /* ---------------- Detalhe ---------------- */
+  /* ERICKTV_RESUME_SERIES_V72 */
+  function resumeSeriesContinue(item) {
+    var seriesId = item._series_id || item.series_id || null;
+    var episodeId = String(item.stream_id || item.id || "");
+    var seriesItem = null;
+    var list = state.series.items || [];
+
+    if (seriesId) {
+      for (var i = 0; i < list.length; i++) {
+        if (String(list[i].series_id) === String(seriesId)) {
+          seriesItem = list[i];
+          break;
+        }
+      }
+    }
+
+    if (!seriesItem) {
+      seriesItem = {
+        series_id: seriesId,
+        name: item._series_name || item.name || item.title || "Série",
+        cover: item._series_cover || pickImage(item),
+        stream_icon: item._series_cover || pickImage(item)
+      };
+    }
+
+    state.detail = {
+      item: seriesItem,
+      kind: "series"
+    };
+
+    function fallback() {
+      var playable;
+      try {
+        playable = JSON.parse(JSON.stringify(item));
+      } catch (e) {
+        playable = item;
+      }
+
+      playable.name =
+        item._episode_play_name ||
+        item._episode_title ||
+        item.name ||
+        "Episódio";
+
+      play(playable, "series");
+    }
+
+    if (!seriesId) {
+      fallback();
+      return;
+    }
+
+    api("get_series_info", { series_id: seriesId })
+      .then(function (info) {
+        state.seriesInfo = info;
+        var seasons = (info && info.episodes) || {};
+        var seasonKeys = Object.keys(seasons);
+        var found = false;
+
+        for (var s = 0; s < seasonKeys.length && !found; s++) {
+          var seasonKey = seasonKeys[s];
+          var eps = seasons[seasonKey] || [];
+
+          for (var e = 0; e < eps.length; e++) {
+            var id = String(eps[e].id || eps[e].stream_id || "");
+
+            if (id === episodeId) {
+              state.season = seasonKey;
+              state.episodes = eps;
+              state.epIndex = e;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (found) playEpisode(state.epIndex);
+        else fallback();
+      })
+      .catch(function () {
+        fallback();
+      });
+  }
+
   function openItem(item, kind) {
     if (kind === "resume") {
       var resumeKind = item._kind || "movie";
 
-      /*
-       * Episódios salvos em Continuar assistindo já são
-       * streams individuais. Não tenta tratá-los como
-       * uma série nova sem series_id.
-       */
+      if (resumeKind === "series" && item._resumeEpisode) {
+        resumeSeriesContinue(item);
+        return;
+      }
+
+      /* Compatibilidade com histórico antigo de episódio. */
       if (resumeKind === "series" && !item.series_id) {
         play(item, "series");
         return;
@@ -846,10 +1039,22 @@
 
       kind = resumeKind;
     }
-    /* De onde este conteúdo foi aberto AGORA (evita voltar para telas antigas). */
-    if (state.screen !== "detail" && state.screen !== "player") state.detailOrigin = state.screen;
-    if (kind === "live") { play(item, "live"); return; }
-    if (kind === "series") { openSeries(item); return; }
+
+    /* De onde este conteúdo foi aberto AGORA. */
+    if (state.screen !== "detail" && state.screen !== "player") {
+      state.detailOrigin = state.screen;
+    }
+
+    if (kind === "live") {
+      play(item, "live");
+      return;
+    }
+
+    if (kind === "series") {
+      openSeries(item);
+      return;
+    }
+
     openMovie(item);
   }
 
@@ -937,11 +1142,36 @@
   }
 
   function episodeItem(ep) {
+    var series = state.detail && state.detail.item ? state.detail.item : null;
+    var seriesName = series ? (series.name || series.title || "") : "";
+    var seriesCover = series ? pickImage(series) : "";
+    var epId = ep.id || ep.stream_id;
+    var epNum = ep.episode_num != null ? ep.episode_num : "";
+    var epTitle = ep.title || (epNum !== "" ? "Episódio " + epNum : "Episódio");
+
     return {
-      stream_id: ep.id,
-      id: ep.id,
-      container_extension: ep.container_extension || "mp4",
-      name: ((state.detail && state.detail.item && state.detail.item.name) || "") + " · E" + ep.episode_num
+      stream_id: epId,
+      id: epId,
+      container_extension:
+        ep.container_extension ||
+        (ep.info && ep.info.container_extension) ||
+        "mp4",
+
+      /* Nome mostrado no player. */
+      name:
+        seriesName +
+        (seriesName ? " · " : "") +
+        (epNum !== "" ? "E" + epNum + " · " : "") +
+        epTitle,
+
+      /* Metadados usados pelo Continuar assistindo. */
+      _series_id: series ? series.series_id : null,
+      series_id: series ? series.series_id : null,
+      _series_name: seriesName,
+      _series_cover: seriesCover,
+      _season: state.season != null ? String(state.season) : "",
+      _episode_num: epNum,
+      _episode_title: epTitle
     };
   }
 
@@ -1032,7 +1262,47 @@
   function persistPosition() {
     if (!state.playing || !video) return;
     if (state.playing.kind === "live") return;
-    saveProgress(state.playing.item, state.playing.kind, video.currentTime, video.duration);
+    if (state._changingMedia) return;
+
+    var pos = video.currentTime;
+    var dur = video.duration;
+
+    saveProgress(
+      state.playing.item,
+      state.playing.kind,
+      pos,
+      dur
+    );
+
+    var finished =
+      isFinite(dur) &&
+      dur > 0 &&
+      pos > dur - 60;
+
+    if (finished) {
+      removeContinue(
+        state.playing.item,
+        state.playing.kind
+      );
+      return;
+    }
+
+    /* Salva durante a reprodução, mesmo sem apertar Voltar. */
+    if (isFinite(pos) && pos >= 15) {
+      var now = Date.now();
+
+      if (
+        !state._continueSavedAt ||
+        now - state._continueSavedAt >= 15000
+      ) {
+        state._continueSavedAt = now;
+        saveContinue(
+          state.playing.item,
+          state.playing.kind,
+          pos
+        );
+      }
+    }
   }
 
   function play(item, kind) {
@@ -1049,7 +1319,12 @@
       };
     }
 
+    state._changingMedia = true;
+    destroyPlayer();
+    state._changingMedia = false;
+
     state.playing = { item: item, kind: kind, url: url };
+    state._continueSavedAt = 0;
     state.resumeAt = kind === "live" ? 0 : getProgress(item, kind);
     show("player");
     $("#osd-title").textContent = esc(item.name || item.title || "Reproduzindo");
@@ -1059,7 +1334,6 @@
     $("#osd-next-ep").classList.toggle("hidden", kind !== "series");
     renderOsdSel();
     showOsd();
-    destroyPlayer();
     applyAspect();
 
     var isHls = /\.m3u8(\?|$)/i.test(url);
@@ -1205,29 +1479,41 @@
   function exitPlayer() {
     persistPosition();
 
-    if (
-      state.playing &&
-      state.playing.kind !== "live" &&
+    var wasKind = state.playing ? state.playing.kind : null;
+    var pos = video ? video.currentTime : 0;
+    var dur = video ? video.duration : 0;
+
+    var finished = !!(
       video &&
-      video.currentTime > 15
-    ) {
+      isFinite(dur) &&
+      dur > 0 &&
+      pos > dur - 60
+    );
+
+    var hadProgress = !!(
+      state.playing &&
+      wasKind !== "live" &&
+      video &&
+      pos > 15 &&
+      !finished
+    );
+
+    if (hadProgress) {
       saveContinue(
         state.playing.item,
-        state.playing.kind,
-        video.currentTime
+        wasKind,
+        pos
       );
     }
 
-
-    var wasKind = state.playing ? state.playing.kind : null;
-    var hadProgress = !!(state.playing && wasKind !== "live" && video && video.currentTime > 15);
-
-    destroyPlayer();
-
     var origin = state.playerOrigin;
 
+    state._changingMedia = true;
+    destroyPlayer();
+    state._changingMedia = false;
+
     if (hadProgress && (wasKind === "movie" || wasKind === "series")) {
-      /* Parou no meio: volta direto para "Continuar assistindo" da categoria. */
+      /* Parou no meio: volta para Continuar assistindo da própria categoria. */
       state.playerOrigin = null;
       state.playing = null;
       state.detail = null;
@@ -1237,10 +1523,6 @@
       return;
     }
 
-    /*
-     * Limpa primeiro para nunca reaproveitar
-     * uma origem velha posteriormente.
-     */
     state.playerOrigin = null;
     state.playing = null;
 
@@ -1251,10 +1533,6 @@
     }
 
     if (origin && origin.screen) {
-      /*
-       * Canal aberto diretamente da grade:
-       * volta para a própria grade.
-       */
       if (origin.screen === "grid") {
         state.detail = null;
         show("grid");
@@ -1279,7 +1557,6 @@
     show("home");
     setActiveTab("home");
   }
-
   /* ---------------- Listas (várias contas Xtream) ---------------- */
   function loadLists() {
     try { return JSON.parse(LS.getItem("stv_lists") || "[]") || []; } catch (e) { return []; }
@@ -1319,7 +1596,7 @@
       c.addEventListener("click", function () {
         if (isActive) { goMenu(); return; }
         try { LS.removeItem(CATALOG_CACHE_KEY); } catch (e) {}
-        clearHistory();
+        /* O histórico é separado por conta; trocar lista não apaga. */
         state.lastFocus = {};
         toast("Entrando em " + p.user + "…");
         $("#in-host").value = p.host; $("#in-user").value = p.user; $("#in-pass").value = p.pass;
@@ -1334,7 +1611,7 @@
   function logout() {
     try { LS.removeItem("stv_profile"); } catch (e) {}
     try { LS.removeItem(CATALOG_CACHE_KEY); } catch (e) {}
-    clearHistory();
+    /* Logout não apaga o histórico da conta. */
     state.userInfo = null;
     destroyPlayer();
     state.profile = null;
@@ -1471,8 +1748,7 @@
   /* ---------------- Bind ---------------- */
   function init() {
     video = $("#video");
-    /* Nova sessão: histórico sempre começa vazio. */
-    clearHistory();
+    /* Histórico persistente: não limpar ao iniciar. */
 
     video.addEventListener("playing", function () { $("#player-spinner").classList.remove("show"); applyAspect(); });
     video.addEventListener("loadedmetadata", applyAspect);
@@ -1572,7 +1848,7 @@
         clearHistory();
         buildHome();
         buildMenu();
-        toast("Histórico de filmes assistidos limpo.");
+        toast("Histórico apagado.");
       });
     }
     var pfLogout = $("#pf-logout");
