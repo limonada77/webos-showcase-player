@@ -31,7 +31,7 @@
   /* ---------------- Estado ---------------- */
   var state = {
     profile: null,           // {host, user, pass}
-    screen: "login",
+    screen: "menu",
     live: { cats: [], items: [], cat: null },
     movies: { cats: [], items: [], cat: null },
     series: { cats: [], items: [], cat: null },
@@ -278,7 +278,8 @@
       state.profile = null;
       $("#login-msg").textContent = "Falha ao conectar: " + e.message +
         " — verifique servidor, usuário e senha (e a conexão da TV).";
-      show("login");
+      if (silent) goMenu();
+      else show("login");
       throw e;
     });
   }
@@ -314,8 +315,7 @@
   function refreshCatalog() {
 
     if (!state.profile) {
-      toast("Conta não conectada.");
-      show("login");
+      toast("Adicione uma lista em Listas.");
       return;
     }
 
@@ -565,6 +565,19 @@
     buildMenu();
     setActiveTab("home");
     show("menu");
+  }
+
+  /* ERICKTV_HOME_FIRST_V74
+   * O launcher (screen-menu) é a Home oficial.
+   * Login Xtream só abre quando o usuário entra em Listas.
+   */
+  function openListLogin() {
+    state.addingList = true;
+    $("#login-msg").textContent = "Adicione uma lista Xtream.";
+    $("#in-host").value = "";
+    $("#in-user").value = "";
+    $("#in-pass").value = "";
+    show("login");
   }
 
   /* ---------------- Billboard rotativo ---------------- */
@@ -1822,15 +1835,13 @@
 
       if (origin.screen === "home") {
         state.detail = null;
-        show("home");
-        setActiveTab("home");
+        goMenu();
         return;
       }
     }
 
     state.detail = null;
-    show("home");
-    setActiveTab("home");
+    goMenu();
   }
   /* ---------------- Listas (várias contas Xtream) ---------------- */
   function loadLists() {
@@ -1897,7 +1908,7 @@
     state.lastFocus = {};
     $("#login-msg").textContent = "";
     $("#in-pass").value = "";
-    show("login");
+    goMenu();
   }
 
   /* ---------------- Controle remoto ---------------- */
@@ -1965,12 +1976,9 @@
       return;
     }
     if (state.screen === "login") {
-      if (state.addingList && state.profile) {
-        state.addingList = false;
-        $("#in-host").value = state.profile.host; $("#in-user").value = state.profile.user; $("#in-pass").value = state.profile.pass;
-        $("#login-msg").textContent = "";
-        openLists();
-      }
+      state.addingList = false;
+      $("#login-msg").textContent = "";
+      goMenu();
       return;
     }
 
@@ -1981,7 +1989,7 @@
       var origin = state.detailOrigin;
       state.detailOrigin = null;
       state.detail = null;
-      if (origin === "grid" || origin === "search" || origin === "home") { show(origin); return; }
+      if (origin === "grid" || origin === "search") { show(origin); return; }
       goMenu();
       return;
     }
@@ -1998,10 +2006,20 @@
   }
 
   function bindMenu() {
-    $$("#screen-menu .tile").forEach(function (t) {
+    $("#screen-menu .tile").forEach(function (t) {
       t.addEventListener("click", function () {
         var go = t.dataset.go;
-        if (go === "highlights") { openLists(); return; }
+
+        if (go === "highlights") {
+          openListLogin();
+          return;
+        }
+
+        if (!state.profile) {
+          toast("Adicione uma lista em Listas.");
+          return;
+        }
+
         state.prevGrid = "grid";
         openGrid(go);
       });
@@ -2251,10 +2269,11 @@
     }
 
     /*
-     * Login aparece somente quando não existe
-     * nenhuma conta salva.
+     * ERICKTV_HOME_FIRST_NO_ACCOUNT_V74
+     * Mesmo sem conta, o app começa e permanece no launcher.
+     * O formulário Xtream só é aberto pelo card Listas.
      */
-    show("login");
+    goMenu();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
