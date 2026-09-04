@@ -320,8 +320,116 @@
   }
 
   /* ---------------- Home ---------------- */
+  function normalizeImageUrl(url) {
+    url = String(url || "").trim();
+
+    if (!url) return "";
+
+    if (/^\/\//.test(url)) {
+      var proto =
+        state.profile &&
+        /^https:\/\//i.test(state.profile.host || "")
+          ? "https:"
+          : "http:";
+
+      return proto + url;
+    }
+
+    if (/^\//.test(url) && state.profile && state.profile.host) {
+      return state.profile.host.replace(/\/+$/, "") + url;
+    }
+
+    return url;
+  }
+
+  function imageCandidates(it) {
+    it = it || {};
+
+    var values = [
+      it.stream_icon,
+      it.cover,
+      it.series_cover,
+      it.movie_image,
+      it.cover_big,
+      it.poster,
+      it.poster_url,
+      it.poster_path,
+      it.image,
+      it.icon,
+      it.logo
+    ];
+
+    if (it.backdrop_path) {
+      if (Array.isArray(it.backdrop_path)) {
+        values.push(it.backdrop_path[0]);
+      } else {
+        values.push(it.backdrop_path);
+      }
+    }
+
+    var out = [];
+
+    values.forEach(function (value) {
+      var url = normalizeImageUrl(value);
+
+      if (!url) return;
+
+      if (out.indexOf(url) === -1) {
+        out.push(url);
+      }
+
+      var alternate = "";
+
+      if (/^https:\/\//i.test(url)) {
+        alternate = url.replace(/^https:\/\//i, "http://");
+      } else if (/^http:\/\//i.test(url)) {
+        alternate = url.replace(/^http:\/\//i, "https://");
+      }
+
+      if (alternate && out.indexOf(alternate) === -1) {
+        out.push(alternate);
+      }
+    });
+
+    return out;
+  }
+
   function pickImage(it) {
-    return it.stream_icon || it.cover || it.movie_image || it.cover_big || "";
+    var list = imageCandidates(it);
+    return list.length ? list[0] : "";
+  }
+
+  function loadSmartImage(img, item, onFail) {
+    var urls = imageCandidates(item);
+    var index = 0;
+
+    function next() {
+      if (index >= urls.length) {
+        img.onerror = null;
+
+        if (onFail) {
+          onFail();
+        }
+
+        return;
+      }
+
+      var url = urls[index++];
+
+      img.onerror = function () {
+        next();
+      };
+
+      try {
+        img.referrerPolicy = "no-referrer";
+      } catch (e) {
+        // webOS antigo pode não suportar referrerPolicy
+      }
+
+      img.src = url;
+    }
+
+    next();
   }
 
   function makeCard(item, kind, poster) {
@@ -329,11 +437,19 @@
     el.className = "card focusable" + (poster ? " poster" : "");
     var img = pickImage(item);
     var name = esc(item.name || item.title);
+
     if (img) {
-      el.innerHTML = '<img loading="lazy" alt="" src="' + img + '"><div class="cap"></div>';
+      el.innerHTML = '<img loading="lazy" alt=""><div class="cap"></div>';
+
       var im = el.firstChild;
-      im.onerror = function () { el.innerHTML = '<div class="ph">' + name + "</div>"; };
+
       el.querySelector(".cap").textContent = name;
+
+      loadSmartImage(im, item, function () {
+        el.innerHTML = '<div class="ph"></div>';
+        el.firstChild.textContent = name;
+      });
+
     } else {
       el.innerHTML = '<div class="ph"></div>';
       el.firstChild.textContent = name;
@@ -367,8 +483,6 @@
 
   function buildHomeQueue() {
     homeQueue = [];
-    var cont = getContinue();
-    if (cont.length) homeQueue.push({ title: "Continuar assistindo", items: cont, kind: "resume", poster: false });
     homeQueue.push({ title: "Filmes em alta", items: state.movies.items.slice(0, 24), kind: "movie", poster: true });
     homeQueue.push({ title: "Séries para maratonar", items: state.series.items.slice(0, 24), kind: "series", poster: true });
     homeQueue.push({ title: "Canais ao vivo", items: state.live.items.slice(0, 24), kind: "live", poster: false });
@@ -637,10 +751,20 @@
     state.lastFocus.grid = defaultBtn;
     show("grid");
     if (startCat) {
-      /* Ex.: ao sair de um conteúdo, cai direto no primeiro card de "Continuar assistindo". */
+      /*
+       * Ao voltar do player, abre a categoria solicitada,
+       * mas mantém o cursor NA CATEGORIA.
+       *
+       * Só a seta DIREITA entra nos conteúdos.
+       */
       setTimeout(function () {
-        var first = $("#grid-items .card");
-        if (first) { catBox.scrollTop = 0; defaultBtn.classList.add("active"); setFocus(first); }
+        catBox.scrollTop = 0;
+
+        if (defaultBtn) {
+          defaultBtn.classList.add("active");
+          state.lastFocus.grid = defaultBtn;
+          setFocus(defaultBtn);
+        }
       }, 60);
     }
   }
@@ -707,7 +831,21 @@
 
   /* ---------------- Detalhe ---------------- */
   function openItem(item, kind) {
-    if (kind === "resume") { kind = item._kind || "movie"; }
+    if (kind === "resume") {
+      var resumeKind = item._kind || "movie";
+
+      /*
+       * Episódios salvos em Continuar assistindo já são
+       * streams individuais. Não tenta tratá-los como
+       * uma série nova sem series_id.
+       */
+      if (resumeKind === "series" && !item.series_id) {
+        play(item, "series");
+        return;
+      }
+
+      kind = resumeKind;
+    }
     /* De onde este conteúdo foi aberto AGORA (evita voltar para telas antigas). */
     if (state.screen !== "detail" && state.screen !== "player") state.detailOrigin = state.screen;
     if (kind === "live") { play(item, "live"); return; }
@@ -1071,7 +1209,7 @@
       state.playing &&
       state.playing.kind !== "live" &&
       video &&
-      video.currentTime > 30
+      video.currentTime > 15
     ) {
       saveContinue(
         state.playing.item,
@@ -1082,7 +1220,7 @@
 
 
     var wasKind = state.playing ? state.playing.kind : null;
-    var hadProgress = !!(state.playing && wasKind !== "live" && video && video.currentTime > 30);
+    var hadProgress = !!(state.playing && wasKind !== "live" && video && video.currentTime > 15);
 
     destroyPlayer();
 

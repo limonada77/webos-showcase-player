@@ -174,7 +174,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
 .cat.active .cat-count { color: #111; }
 .cat.focused { background: #fff; color: #000; box-shadow: var(--focus); transform: translateX(6px); }
 .cat.focused .cat-count { color: #000; }
-.grid-main { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 34px 14px 0 20px; }
+.grid-main { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 34px 4px 0 20px; }
 .grid-title { font-size: 34px; font-weight: 800; margin: 0 0 14px; }
 /* Capas próximas umas das outras e ocupando até perto da borda da TV (4 por linha). */
 .grid {
@@ -490,3 +490,24 @@ body,
 #lists-add { margin-top: 8px; width: auto; display: inline-block; padding: 14px 28px; }
 #screen-search .grid .card, #screen-search .grid .card.poster { width: calc((100% - 100px) / 6); }
 #screen-search .grid .card img, #screen-search .grid .card .ph { height: 260px; }
+
+
+/* =====================================================
+   ERICKTV_GRID_SPACING_FIX
+   Capas separadas + grade próxima da borda
+   ===================================================== */
+
+.grid-main {
+  padding-right: 4px;
+}
+
+.grid {
+  column-gap: 24px;
+  row-gap: 30px;
+  padding-right: 4px;
+}
+
+.grid .card,
+.grid .card.poster {
+  width: calc((100% - 72px) / 4);
+}
