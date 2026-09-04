@@ -3,7 +3,9 @@ package com.darktv.admin;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Base64;
 import android.widget.Button;
 import android.widget.EditText;
@@ -60,6 +62,53 @@ public class MainActivity extends Activity {
         root.addView(sub);
 
         deviceInput = field("MAC / ID do dispositivo");
+        deviceInput.setSingleLine(true);
+        deviceInput.setInputType(
+            InputType.TYPE_CLASS_TEXT |
+            InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        );
+
+        /* ERICKTV_ADMIN_MAC_FORMAT_V2
+         * Aceita MAC digitado/colado com ou sem : - espaço etc.
+         * Converte ao vivo para MAIÚSCULO e adiciona : automaticamente.
+         */
+        deviceInput.addTextChangedListener(new TextWatcher() {
+            private boolean changing = false;
+
+            @Override
+            public void beforeTextChanged(
+                CharSequence s,
+                int start,
+                int count,
+                int after
+            ) {}
+
+            @Override
+            public void onTextChanged(
+                CharSequence s,
+                int start,
+                int before,
+                int count
+            ) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (changing) return;
+
+                String formatted =
+                    formatDeviceInput(s.toString());
+
+                if (!formatted.equals(s.toString())) {
+                    changing = true;
+                    deviceInput.setText(formatted);
+                    deviceInput.setSelection(
+                        formatted.length()
+                    );
+                    changing = false;
+                }
+            }
+        });
+
         root.addView(deviceInput);
 
         Button grant = button("LIBERAR ACESSO");
@@ -121,6 +170,11 @@ public class MainActivity extends Activity {
 
         if (device.isEmpty()) {
             fail("Digite o MAC / ID da TV.");
+            return;
+        }
+
+        if (device.replace(":", "").length() != 12) {
+            fail("MAC / ID incompleto. Digite os 12 caracteres.");
             return;
         }
 
@@ -254,6 +308,12 @@ public class MainActivity extends Activity {
         int putCode = put.getResponseCode();
 
         if (putCode != 200 && putCode != 201) {
+            if (putCode == 403) {
+                throw new Exception(
+                    "Token sem permissão para gravar. No GitHub, selecione este repositório e deixe Contents como Read and write."
+                );
+            }
+
             throw new Exception(
                 "GitHub PUT HTTP " + putCode + ": " + readBody(put)
             );
@@ -321,26 +381,35 @@ public class MainActivity extends Activity {
         return out.toString();
     }
 
-    private String normalizeDeviceId(String value) {
+    private String formatDeviceInput(String value) {
         String raw =
             value == null
                 ? ""
-                : value.trim().toUpperCase(Locale.US);
+                : value.toUpperCase(Locale.US);
 
-        String hex = raw.replaceAll("[^0-9A-F]", "");
+        String hex =
+            raw.replaceAll("[^0-9A-F]", "");
 
-        if (hex.length() == 12) {
-            StringBuilder out = new StringBuilder();
-
-            for (int i = 0; i < 12; i += 2) {
-                if (out.length() > 0) out.append(":");
-                out.append(hex.substring(i, i + 2));
-            }
-
-            return out.toString();
+        if (hex.length() > 12) {
+            hex = hex.substring(0, 12);
         }
 
-        return raw;
+        StringBuilder out =
+            new StringBuilder();
+
+        for (int i = 0; i < hex.length(); i++) {
+            if (i > 0 && i % 2 == 0) {
+                out.append(":");
+            }
+
+            out.append(hex.charAt(i));
+        }
+
+        return out.toString();
+    }
+
+    private String normalizeDeviceId(String value) {
+        return formatDeviceInput(value);
     }
 
     private String sha256(String value) throws Exception {

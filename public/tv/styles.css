@@ -514,12 +514,15 @@ body,
 
 /* ERICKTV_ACCESS_MODAL_V1 */
 .access-gate {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 999999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   background:
     radial-gradient(900px 500px at 50% 25%, rgba(229, 9, 20, 0.24), transparent 68%),
     rgba(0, 0, 0, 0.98);
@@ -531,10 +534,13 @@ body,
 .access-gate.unlocked { opacity: 0; }
 
 .access-modal {
-  width: 470px;
-  max-height: 94vh;
-  overflow: hidden;
-  padding: 24px 34px 28px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 440px;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  padding: 18px 30px 20px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
   background: rgba(15, 15, 18, 0.98);
@@ -558,21 +564,23 @@ body,
 }
 
 .access-price {
-  margin: 10px 0 12px;
+  margin: 8px 0 10px;
   color: #fff;
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 900;
 }
 
 .access-qr {
   display: block;
-  width: 228px;
-  height: 228px;
-  margin: 0 auto 14px;
-  padding: 8px;
-  border-radius: 12px;
+  width: 214px;
+  height: 214px;
+  margin: 0 auto 12px;
+  padding: 4px;
+  border: 0;
+  border-radius: 10px;
   background: #fff;
   object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .access-label {
