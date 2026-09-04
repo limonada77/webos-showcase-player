@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Base64;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
@@ -89,30 +90,22 @@ public class MainActivity extends Activity {
 
         deviceInput = field("MAC / ID do dispositivo");
         deviceInput.setSingleLine(true);
-        deviceInput.setInputType(
-            InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
-        );
-
         /*
-         * Não formatar o MAC a cada tecla.
-         * Alterar o texto com setText() enquanto o IME está compondo
-         * interrompe a digitação em alguns teclados Android.
-         * A normalização continua acontecendo ao liberar o acesso.
+         * Entrada crua e estável: o app não reinicia a conexão com o IME
+         * nem reescreve o texto enquanto o usuário está digitando.
+         * O MAC é normalizado somente quando LIBERAR ACESSO é pressionado.
          */
-        deviceInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                String formatted =
-                    formatDeviceInput(
-                        deviceInput.getText().toString()
-                    );
-
-                deviceInput.setText(formatted);
-                deviceInput.setSelection(
-                    formatted.length()
-                );
-            }
-        });
+        deviceInput.setRawInputType(
+            InputType.TYPE_CLASS_TEXT |
+            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD |
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        );
+        deviceInput.setImeOptions(
+            EditorInfo.IME_ACTION_NEXT |
+            EditorInfo.IME_FLAG_NO_EXTRACT_UI |
+            EditorInfo.IME_FLAG_NO_FULLSCREEN |
+            EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+        );
 
         root.addView(deviceInput);
 
@@ -158,10 +151,8 @@ public class MainActivity extends Activity {
         hostInput = field("Servidor / DNS (http://host:porta)");
         userInput = field("Usuário da lista");
         passInput = field("Senha da lista");
-        passInput.setInputType(
-            InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_PASSWORD |
-            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        passInput.setTransformationMethod(
+            PasswordTransformationMethod.getInstance()
         );
 
         root.addView(hostInput);
@@ -189,17 +180,13 @@ public class MainActivity extends Activity {
         root.addView(settingsHelp);
 
         adminKeyInput = field("Chave Admin DarkTV");
-        adminKeyInput.setInputType(
-            InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_PASSWORD |
-            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        adminKeyInput.setTransformationMethod(
+            PasswordTransformationMethod.getInstance()
         );
 
         githubTokenInput = field("Token GitHub");
-        githubTokenInput.setInputType(
-            InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_PASSWORD |
-            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        githubTokenInput.setTransformationMethod(
+            PasswordTransformationMethod.getInstance()
         );
 
         String savedAdminKey =
@@ -917,12 +904,17 @@ public class MainActivity extends Activity {
         e.setHint(hint);
         e.setTextColor(Color.WHITE);
         e.setSingleLine(true);
-        e.setInputType(
+        e.setRawInputType(
             InputType.TYPE_CLASS_TEXT |
             InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD |
             InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         );
-        e.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        e.setImeOptions(
+            EditorInfo.IME_ACTION_NEXT |
+            EditorInfo.IME_FLAG_NO_EXTRACT_UI |
+            EditorInfo.IME_FLAG_NO_FULLSCREEN |
+            EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+        );
         e.setHintTextColor(
             Color.rgb(
                 113,
