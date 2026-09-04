@@ -29,13 +29,8 @@
   function esc(str) { return String(str == null ? "" : str); }
 
   /* ERICKTV_ACCESS_GATE_V1 */
-  var ACCESS_API_URL =
-    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/access.json?ref=access-control";
-
-  var ACCESS_RAW_URL =
-    "https://raw.githubusercontent.com/limonada77/webos-showcase-player/access-control/public/access.json";
-
-  var accessFastUntil = 0;
+  var ACCESS_URL =
+    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/access.json?ref=main";
 
   function normalizeDeviceId(value) {
     var raw = String(value || "").trim().toUpperCase();
@@ -256,18 +251,10 @@
     if (!state.accessLocked) return;
 
     var status = $("#access-status");
-    var useApi = Date.now() < accessFastUntil;
-    var url =
-      useApi
-        ? ACCESS_API_URL + "&ts=" + Date.now()
-        : ACCESS_RAW_URL + "?ts=" + Date.now() + "-" + Math.random();
 
     fetch(
-      url,
-      {
-        method: "GET",
-        cache: "no-store"
-      }
+      ACCESS_URL + "&ts=" + Date.now(),
+      { method: "GET", cache: "no-store" }
     )
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
@@ -276,7 +263,7 @@
       .then(function (payload) {
         var data = payload;
 
-        if (useApi && payload && payload.content) {
+        if (payload && payload.content) {
           var raw =
             String(payload.content)
               .replace(/\s+/g, "");
@@ -335,19 +322,10 @@
       }
     } catch (e) {}
 
-    /*
-     * Durante o primeiro minuto usamos a Contents API,
-     * que reflete o commit novo quase imediatamente.
-     * Depois caímos para RAW para não estourar o limite
-     * de requisições públicas do GitHub.
-     */
-    accessFastUntil =
-      Date.now() + 10000;
-
     checkAccessNow();
 
     state.accessTimer =
-      setInterval(checkAccessNow, 250);
+      setInterval(checkAccessNow, 500);
   }
 
   /* ---------------- Estado ---------------- */
