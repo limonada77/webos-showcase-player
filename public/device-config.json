@@ -93,7 +93,7 @@
       "expiresAt": "2026-10-04T20:08:57.267Z",
       "source": "admin",
       "updatedAt": 1788552537770,
-      "xtream_enc": "v1.P8C4u54xfkYuxphN.bJR8aagUv\/qkixTrzdF0AgaosUTQBjV+WULYSQOgRiR\/3\/1Buh\/iA8yJjzvNEfv+exdjQS048wXlsciJhairGl0pUddcfzARtqz+bv4aqFR71zc="
+      "xtream_enc": "v1.P8C4u54xfkYuxphN.bJR8aagUv/qkixTrzdF0AgaosUTQBjV+WULYSQOgRiR/3/1Buh/iA8yJjzvNEfv+exdjQS048wXlsciJhairGl0pUddcfzARtqz+bv4aqFR71zc="
     },
     {
       "hash": "e512b76864f496444a7a4cdcdee2eedea5b40ca744b8762a4cfdbaf052e6448f",
@@ -102,7 +102,7 @@
       "expiresAt": "2026-10-04T20:13:02.046Z",
       "source": "admin",
       "updatedAt": 1788552782628,
-      "xtream_enc": "v1.KjHHPGRAKJWlyvdk.3AC0osZKBJ\/id8nCcuJjaqi2aG3pSCG+llA6f+jQMYGDP7nvXkOLmEh9cduxHW1o+lBgk+6plLtheilVppmeR8\/nHqxyQgwDg0BC289sYX5wcro="
+      "xtream_enc": "v1.KjHHPGRAKJWlyvdk.3AC0osZKBJ/id8nCcuJjaqi2aG3pSCG+llA6f+jQMYGDP7nvXkOLmEh9cduxHW1o+lBgk+6plLtheilVppmeR8/nHqxyQgwDg0BC289sYX5wcro="
     },
     {
       "hash": "ec182a5ec6e2f9096f22f57f7ddf0061967bbd53646429d0497a2f809800dff8",
@@ -111,7 +111,7 @@
       "expiresAt": null,
       "source": "admin",
       "updatedAt": 1788553623751,
-      "xtream_enc": "v1.Dawd5GaxCJtYgmQp.X4d1MbWSpIoknJZpsYH1\/I8MCWPgiHX6QmOb+YfDlxNTIpRg55pgAXvpAncebxJistLHOYLZyUw3vOgyHkDH655Lw7EEcGdXp3upJRm7OjElTVw="
+      "xtream_enc": "v1.Dawd5GaxCJtYgmQp.X4d1MbWSpIoknJZpsYH1/I8MCWPgiHX6QmOb+YfDlxNTIpRg55pgAXvpAncebxJistLHOYLZyUw3vOgyHkDH655Lw7EEcGdXp3upJRm7OjElTVw="
     },
     {
       "hash": "74a50677bc254b5a15f857c1ba3aa5d1b5bcdd8a91fc6d2dc8ba799fefbd0645",
@@ -120,17 +120,8 @@
       "expiresAt": null,
       "source": "admin",
       "updatedAt": 1788554549456,
-      "xtream_enc": "v1.1V6vS4JAG72O66ru.WpwH4DS7\/\/X9t8cM51bRZRkjA+o2Ks+lquQhEupc+8GZhLW\/HuFuFT2TU3Ata\/LoMLoXENljKhVA881BusZgaXyyAmXTpGy9SK7GaskT\/K+X7vU="
-    },
-    {
-      "hash": "574f312c334e3fa873c84f30490eac3311d04a7fed65d8dbca0f32bbda361be1",
-      "active": true,
-      "duration": "month",
-      "expiresAt": "2026-10-04T20:55:38.298Z",
-      "source": "admin",
-      "updatedAt": 1788555338650,
-      "xtream_enc": "v1.h+O5VH3TFyIBC0JE.LJxd0tf4+l6Mz+WO70J33FZUg+BhlAKCCkL1nyJW3b20qCrSSGjevmoWUlAe5V3U4yLc0Y4nBL1dorIM\/hGVIZd2E5QQLZ\/2b4n45Wxq9TUFOBU="
+      "xtream_enc": "v1.1V6vS4JAG72O66ru.WpwH4DS7//X9t8cM51bRZRkjA+o2Ks+lquQhEupc+8GZhLW/HuFuFT2TU3Ata/LoMLoXENljKhVA881BusZgaXyyAmXTpGy9SK7GaskT/K+X7vU="
     }
   ],
-  "updatedAt": 1788555338650
+  "updatedAt": 1788555795139
 }
