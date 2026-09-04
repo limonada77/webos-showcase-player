@@ -38,6 +38,9 @@
   var PIX_CHECKOUT_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-checkout";
 
+  var PIX_STATUS_URL =
+    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-status";
+
   var DEVICE_CONFIG_URL =
     "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/device-config.json?ref=main";
 
@@ -702,30 +705,99 @@
     startLockedTimers();
   }
 
-  function getOrCreatePixPolicy() {
-    var policy =
-      readJsonStorage(
-        pixPolicyStorageKey()
-      );
+  function fetchPixPolicy() {
+    var now = Date.now();
 
-    if (!policy) {
-      policy = {
-        source: "pix",
-        duration: "month",
-        expiresAt:
-          addCalendarMonthsIso(
-            new Date(),
-            1
-          )
-      };
-
-      writeJsonStorage(
-        pixPolicyStorageKey(),
-        policy
-      );
+    if (
+      state.pixStatusPromise &&
+      now - state.pixStatusFetchedAt < 1000
+    ) {
+      return state.pixStatusPromise;
     }
 
-    return policy;
+    state.pixStatusFetchedAt = now;
+
+    state.pixStatusPromise =
+      fetch(
+        PIX_STATUS_URL,
+        {
+          method: "POST",
+          cache: "no-store",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            device_hash:
+              state.accessHash
+          })
+        }
+      )
+        .then(function (r) {
+          if (!r.ok) {
+            throw new Error(
+              "HTTP " + r.status
+            );
+          }
+
+          return r.json();
+        })
+        .then(function (data) {
+          if (
+            !data ||
+            data.paid !== true ||
+            !data.paid_at
+          ) {
+            return null;
+          }
+
+          var paidAt =
+            new Date(
+              String(
+                data.paid_at
+              )
+            );
+
+          if (
+            !isFinite(
+              paidAt.getTime()
+            )
+          ) {
+            return null;
+          }
+
+          var policy = {
+            source: "pix",
+            duration: "month",
+            paidAt:
+              paidAt.toISOString(),
+            expiresAt:
+              addCalendarMonthsIso(
+                paidAt,
+                1
+              )
+          };
+
+          writeJsonStorage(
+            pixPolicyStorageKey(),
+            policy
+          );
+
+          return policy;
+        })
+        .catch(function () {
+          return readJsonStorage(
+            pixPolicyStorageKey()
+          );
+        })
+        .then(function (policy) {
+          state.pixStatusPromise =
+            null;
+
+          return policy;
+        });
+
+    return state.pixStatusPromise;
   }
 
   function resolveGrantedAccess() {
@@ -738,7 +810,7 @@
 
     state.accessResolving = true;
 
-    fetchRemoteDeviceEntry(true)
+    fetchRemoteDeviceEntry(false)
       .then(function (entry) {
         if (entry) {
           var policy =
@@ -780,43 +852,63 @@
 
         /*
          * Sem política do Admin:
-         * tratamos como liberação via PIX.
-         * O webhook atual já libera o hash no Supabase;
-         * esta versão deixa a TV preparada para um mês.
+         * consulta o pagamento confirmado pelo webhook.
+         * O horário vem do Supabase/Stripe, então o mês
+         * começa no instante em que o pagamento foi aceito.
          */
-        var pixPolicy =
-          getOrCreatePixPolicy();
+        return fetchPixPolicy()
+          .then(function (pixPolicy) {
+            if (!pixPolicy) {
+              var waitingPix =
+                $("#access-status");
 
-        if (
-          !isPolicyValid(
-            pixPolicy
-          )
-        ) {
-          var pixStatus =
-            $("#access-status");
+              if (waitingPix) {
+                waitingPix.textContent =
+                  "Aguardando pagamento PIX...";
+              }
 
-          if (pixStatus) {
-            pixStatus.textContent =
-              "Acesso PIX vencido. Faça um novo pagamento.";
-          }
+              return null;
+            }
 
-          state.currentPolicy =
-            pixPolicy;
+            if (
+              !isPolicyValid(
+                pixPolicy
+              )
+            ) {
+              var pixStatus =
+                $("#access-status");
 
-          return null;
-        }
+              if (pixStatus) {
+                pixStatus.textContent =
+                  "Acesso PIX vencido. Faça um novo pagamento.";
+              }
 
-        unlockAccess(
-          pixPolicy,
-          null
-        );
+              state.currentPolicy =
+                pixPolicy;
 
-        return true;
+              return null;
+            }
+
+            unlockAccess(
+              pixPolicy,
+              null
+            );
+
+            return true;
+          });
       })
-      .finally(function () {
-        state.accessResolving =
-          false;
-      });
+      .then(
+        function (value) {
+          state.accessResolving =
+            false;
+
+          return value;
+        },
+        function () {
+          state.accessResolving =
+            false;
+        }
+      );
   }
 
   function requestAccessState() {
@@ -873,6 +965,11 @@
           resolveGrantedAccess();
           return;
         }
+
+        state.remoteEntryLoaded =
+          false;
+        state.remoteEntry =
+          null;
 
         var status =
           $("#access-status");
@@ -1102,7 +1199,9 @@
     currentPolicy: null,
     remoteEntry: null,
     remoteEntryLoaded: false,
-    remoteEntryFetchedAt: 0
+    remoteEntryFetchedAt: 0,
+    pixStatusFetchedAt: 0,
+    pixStatusPromise: null
   };
 
   /* ---------------- Cache rápido ---------------- */
