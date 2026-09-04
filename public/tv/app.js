@@ -246,14 +246,26 @@
     var status = $("#access-status");
 
     fetch(
-      ACCESS_URL + "?ts=" + Date.now(),
+      ACCESS_URL + "&ts=" + Date.now(),
       { method: "GET", cache: "no-store" }
     )
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
-      .then(function (data) {
+      .then(function (payload) {
+        var data = payload;
+
+        if (payload && payload.content) {
+          var raw =
+            String(payload.content)
+              .replace(/\s+/g, "");
+
+          data = JSON.parse(
+            window.atob(raw)
+          );
+        }
+
         if (accessGrantMatches(data, state.accessHash)) {
           if (status) status.textContent = "Acesso liberado.";
           unlockAccess();
