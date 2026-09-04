@@ -142,7 +142,7 @@ public class MainActivity extends Activity {
         tokenInput.setText(savedToken);
         root.addView(tokenInput);
 
-        Button saveToken = button("SALVAR TOKEN");
+        Button saveToken = button("SALVAR CHAVE");
         saveToken.setOnClickListener(v -> {
             String token = tokenInput.getText().toString().trim();
 
