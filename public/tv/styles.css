@@ -179,7 +179,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 34px 14px 0 20px;
+  padding: 34px 6px 0 20px;
 }
 .grid-title { font-size: 34px; font-weight: 800; margin: 0 0 14px; }
 
@@ -191,14 +191,14 @@ input.focused { border-color: #fff; background: #2a2a30; }
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  column-gap: 44px;
-  row-gap: 42px;
-  padding: 10px 8px 60px 8px;
+  column-gap: 58px;
+  row-gap: 44px;
+  padding: 10px 10px 60px 8px;
   overflow: hidden;
 }
 .grid .card,
 .grid .card.poster {
-  width: calc((100% - 132px) / 4);
+  width: calc((100% - 174px) / 4);
   height: auto;
   background: transparent;
   border-radius: 0;
