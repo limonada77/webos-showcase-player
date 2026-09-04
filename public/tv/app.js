@@ -222,21 +222,28 @@
         "stv_access_granted_hash",
         state.accessHash || ""
       );
+      LS.setItem(
+        "stv_access_permanent_v1",
+        "1"
+      );
+    } catch (e) {}
+
+    try {
+      document.documentElement.classList.add(
+        "access-permanent"
+      );
     } catch (e) {}
 
     var gate = $("#access-gate");
-
-    if (gate) {
-      gate.classList.add("unlocked");
-
-      setTimeout(function () {
-        gate.style.display = "none";
-      }, 220);
-    }
+    if (gate) gate.style.display = "none";
 
     if (state.accessTimer) {
       clearInterval(state.accessTimer);
       state.accessTimer = null;
+    }
+
+    if (state.screen !== "menu") {
+      goMenu();
     }
   }
 
