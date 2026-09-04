@@ -30,7 +30,10 @@
 
   /* ERICKTV_ACCESS_GATE_V1 */
   var ACCESS_URL =
-    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/access.json?ref=main";
+    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/rest/v1/rpc/check_device_access";
+
+  var ACCESS_KEY =
+    "sb_publishable_VUiAXt82sNXB6sDk4eeQCQ_ablSGLNc";
 
   function normalizeDeviceId(value) {
     var raw = String(value || "").trim().toUpperCase();
@@ -253,27 +256,26 @@
     var status = $("#access-status");
 
     fetch(
-      ACCESS_URL + "&ts=" + Date.now(),
-      { method: "GET", cache: "no-store" }
+      ACCESS_URL,
+      {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": ACCESS_KEY,
+          "Authorization": "Bearer " + ACCESS_KEY
+        },
+        body: JSON.stringify({
+          p_hash: state.accessHash
+        })
+      }
     )
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
-      .then(function (payload) {
-        var data = payload;
-
-        if (payload && payload.content) {
-          var raw =
-            String(payload.content)
-              .replace(/\s+/g, "");
-
-          data = JSON.parse(
-            window.atob(raw)
-          );
-        }
-
-        if (accessGrantMatches(data, state.accessHash)) {
+      .then(function (granted) {
+        if (granted === true) {
           if (status) status.textContent = "Acesso liberado.";
           unlockAccess();
           return;
@@ -325,7 +327,7 @@
     checkAccessNow();
 
     state.accessTimer =
-      setInterval(checkAccessNow, 1500);
+      setInterval(checkAccessNow, 500);
   }
 
   /* ---------------- Estado ---------------- */
