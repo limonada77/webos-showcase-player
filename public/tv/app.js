@@ -287,6 +287,22 @@
   }
 
   function initAccessGate() {
+    try {
+      if (
+        LS.getItem("stv_access_permanent_v1") ===
+        "1"
+      ) {
+        state.accessLocked = false;
+
+        var oldGate = $("#access-gate");
+        if (oldGate) {
+          oldGate.style.display = "none";
+        }
+
+        return;
+      }
+    } catch (e) {}
+
     var id = getDeviceId();
     var normalized = normalizeDeviceId(id);
 
@@ -309,7 +325,7 @@
     checkAccessNow();
 
     state.accessTimer =
-      setInterval(checkAccessNow, 3500);
+      setInterval(checkAccessNow, 1500);
   }
 
   /* ---------------- Estado ---------------- */
