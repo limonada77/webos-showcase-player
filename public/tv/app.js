@@ -38,6 +38,12 @@
   var PIX_CHECKOUT_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-checkout";
 
+  var DEVICE_CONFIG_URL =
+    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/device-config.json?ref=main";
+
+  var CONFIG_KEY_B64 =
+    "orcOggT4W+iiKh5m3/MWqYipHn29xcnjgXV7iAdETjY=";
+
   function normalizeDeviceId(value) {
     var raw = String(value || "").trim().toUpperCase();
     var hex = raw.replace(/[^0-9A-F]/g, "");
@@ -192,77 +198,750 @@
     return generateLocalDeviceId();
   }
 
-  function accessGrantMatches(data, hash) {
-    var list =
-      data && Array.isArray(data.devices)
-        ? data.devices
-        : [];
 
-    for (var i = 0; i < list.length; i++) {
-      var entry = list[i];
+  function base64ToBytes(value) {
+    var raw = window.atob(String(value || ""));
+    var out = new Uint8Array(raw.length);
 
-      if (
-        typeof entry === "string" &&
-        String(entry).toLowerCase() === hash
-      ) {
-        return true;
-      }
-
-      if (
-        entry &&
-        entry.active !== false &&
-        String(entry.hash || "").toLowerCase() === hash
-      ) {
-        return true;
-      }
+    for (var i = 0; i < raw.length; i++) {
+      out[i] = raw.charCodeAt(i);
     }
 
-    return false;
+    return out;
   }
 
-  function unlockAccess() {
-    state.accessLocked = false;
+  function bytesToUtf8(bytes) {
+    var binary = "";
+
+    for (var i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
 
     try {
-      LS.setItem(
-        "stv_access_granted_hash",
-        state.accessHash || ""
-      );
-      LS.setItem(
-        "stv_access_permanent_v1",
-        "1"
-      );
-    } catch (e) {}
+      return decodeURIComponent(escape(binary));
+    } catch (e) {
+      return binary;
+    }
+  }
 
+  function decryptRemoteConfig(value) {
+    value = String(value || "");
+
+    var parts = value.split(".");
+
+    if (
+      parts.length !== 3 ||
+      parts[0] !== "v1" ||
+      !window.crypto ||
+      !window.crypto.subtle
+    ) {
+      return Promise.reject(
+        new Error("Criptografia não suportada")
+      );
+    }
+
+    var keyBytes = base64ToBytes(CONFIG_KEY_B64);
+    var ivBytes = base64ToBytes(parts[1]);
+    var encryptedBytes = base64ToBytes(parts[2]);
+
+    return window.crypto.subtle
+      .importKey(
+        "raw",
+        keyBytes,
+        { name: "AES-GCM" },
+        false,
+        ["decrypt"]
+      )
+      .then(function (key) {
+        return window.crypto.subtle.decrypt(
+          {
+            name: "AES-GCM",
+            iv: ivBytes,
+            tagLength: 128
+          },
+          key,
+          encryptedBytes
+        );
+      })
+      .then(function (plain) {
+        return bytesToUtf8(
+          new Uint8Array(plain)
+        );
+      });
+  }
+
+  function remoteEntryStorageKey() {
+    return "stv_remote_entry_v2:" +
+      String(state.accessHash || "");
+  }
+
+  function accessPolicyStorageKey() {
+    return "stv_access_policy_v2:" +
+      String(state.accessHash || "");
+  }
+
+  function pixPolicyStorageKey() {
+    return "stv_pix_policy_v2:" +
+      String(state.accessHash || "");
+  }
+
+  function readJsonStorage(key) {
     try {
-      document.documentElement.classList.add(
-        "access-permanent"
+      return JSON.parse(
+        LS.getItem(key) || "null"
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeJsonStorage(key, value) {
+    try {
+      LS.setItem(
+        key,
+        JSON.stringify(value)
       );
     } catch (e) {}
+  }
 
-    var gate = $("#access-gate");
-    if (gate) gate.style.display = "none";
+  function getCachedRemoteEntry() {
+    return readJsonStorage(
+      remoteEntryStorageKey()
+    );
+  }
 
+  function cacheRemoteEntry(entry) {
+    if (!entry) return;
+
+    writeJsonStorage(
+      remoteEntryStorageKey(),
+      entry
+    );
+  }
+
+  function getCachedAccessPolicy() {
+    return readJsonStorage(
+      accessPolicyStorageKey()
+    );
+  }
+
+  function cacheAccessPolicy(policy) {
+    if (!policy) return;
+
+    writeJsonStorage(
+      accessPolicyStorageKey(),
+      policy
+    );
+  }
+
+  function addCalendarMonthsIso(start, months) {
+    var d = new Date(start.getTime());
+    var day = d.getDate();
+
+    d.setDate(1);
+    d.setMonth(
+      d.getMonth() + months
+    );
+
+    var lastDay =
+      new Date(
+        d.getFullYear(),
+        d.getMonth() + 1,
+        0
+      ).getDate();
+
+    d.setDate(
+      Math.min(day, lastDay)
+    );
+
+    return d.toISOString();
+  }
+
+  function policyFromEntry(entry) {
+    if (!entry) return null;
+
+    return {
+      source:
+        String(entry.source || "admin"),
+      duration:
+        String(entry.duration || "forever"),
+      expiresAt:
+        entry.expiresAt
+          ? String(entry.expiresAt)
+          : null
+    };
+  }
+
+  function isPolicyValid(policy) {
+    if (!policy) return false;
+
+    if (!policy.expiresAt) {
+      return true;
+    }
+
+    var expires =
+      Date.parse(policy.expiresAt);
+
+    return (
+      isFinite(expires) &&
+      expires > Date.now()
+    );
+  }
+
+  function fetchRemoteDeviceEntry(force) {
+    var now = Date.now();
+
+    if (
+      !force &&
+      state.remoteEntryLoaded &&
+      now - state.remoteEntryFetchedAt < 30000
+    ) {
+      return Promise.resolve(
+        state.remoteEntry
+      );
+    }
+
+    return fetch(
+      DEVICE_CONFIG_URL +
+        "&ts=" + now,
+      {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          "Accept":
+            "application/vnd.github+json"
+        }
+      }
+    )
+      .then(function (r) {
+        if (!r.ok) {
+          throw new Error(
+            "HTTP " + r.status
+          );
+        }
+
+        return r.json();
+      })
+      .then(function (payload) {
+        var encoded =
+          payload &&
+          payload.content
+            ? String(
+                payload.content
+              ).replace(/\s+/g, "")
+            : "";
+
+        var data =
+          encoded
+            ? JSON.parse(
+                window.atob(encoded)
+              )
+            : { devices: [] };
+
+        var list =
+          data &&
+          Array.isArray(data.devices)
+            ? data.devices
+            : [];
+
+        var found = null;
+
+        for (
+          var i = 0;
+          i < list.length;
+          i++
+        ) {
+          var item = list[i];
+
+          if (
+            item &&
+            String(
+              item.hash || ""
+            ).toLowerCase() ===
+              state.accessHash
+          ) {
+            found = item;
+            break;
+          }
+        }
+
+        state.remoteEntryLoaded = true;
+        state.remoteEntryFetchedAt = now;
+        state.remoteEntry = found;
+
+        if (found) {
+          cacheRemoteEntry(found);
+        }
+
+        return found;
+      })
+      .catch(function () {
+        var cached =
+          getCachedRemoteEntry();
+
+        if (cached) {
+          state.remoteEntryLoaded = true;
+          state.remoteEntry = cached;
+          return cached;
+        }
+
+        return null;
+      });
+  }
+
+  function applyRemoteXtream(entry) {
+    if (
+      !entry ||
+      !entry.xtream_enc
+    ) {
+      return Promise.resolve(null);
+    }
+
+    return decryptRemoteConfig(
+      entry.xtream_enc
+    )
+      .then(function (plain) {
+        var raw = JSON.parse(plain);
+
+        if (
+          !raw ||
+          !raw.host ||
+          !raw.user ||
+          !raw.pass
+        ) {
+          return null;
+        }
+
+        var profile = {
+          host: normHost(raw.host),
+          user: String(raw.user),
+          pass: String(raw.pass)
+        };
+
+        try {
+          LS.setItem(
+            "stv_profile",
+            JSON.stringify(profile)
+          );
+        } catch (e) {}
+
+        try {
+          upsertList(profile);
+        } catch (e) {}
+
+        state.profile = profile;
+
+        var hostInput = $("#in-host");
+        var userInput = $("#in-user");
+        var passInput = $("#in-pass");
+        var userName = $("#user-name");
+
+        if (hostInput) {
+          hostInput.value =
+            profile.host;
+        }
+
+        if (userInput) {
+          userInput.value =
+            profile.user;
+        }
+
+        if (passInput) {
+          passInput.value =
+            profile.pass;
+        }
+
+        if (userName) {
+          userName.textContent =
+            profile.user;
+        }
+
+        return profile;
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
+  function stopLockedTimers() {
     if (state.accessTimer) {
-      clearInterval(state.accessTimer);
+      clearInterval(
+        state.accessTimer
+      );
       state.accessTimer = null;
     }
 
     if (state.pixTimer) {
-      clearInterval(state.pixTimer);
+      clearInterval(
+        state.pixTimer
+      );
       state.pixTimer = null;
-    }
-
-    if (state.screen !== "menu") {
-      goMenu();
     }
   }
 
-  function loadPixCheckout() {
-    if (!state.accessLocked || !state.accessHash) return;
+  function startLockedTimers() {
+    if (!state.accessTimer) {
+      state.accessTimer =
+        setInterval(
+          checkAccessNow,
+          500
+        );
+    }
 
-    var qr = $("#access-qr");
-    var paymentStatus = $("#access-payment-status");
+    if (!state.pixTimer) {
+      state.pixTimer =
+        setInterval(
+          loadPixCheckout,
+          10000
+        );
+    }
+  }
+
+  function unlockAccess(
+    policy,
+    remoteProfile
+  ) {
+    state.accessLocked = false;
+    state.currentPolicy =
+      policy || null;
+
+    if (policy) {
+      cacheAccessPolicy(policy);
+    }
+
+    try {
+      LS.removeItem(
+        "stv_access_permanent_v1"
+      );
+
+      LS.setItem(
+        "stv_access_granted_hash",
+        state.accessHash || ""
+      );
+    } catch (e) {}
+
+    try {
+      document.documentElement
+        .classList.remove(
+          "access-permanent"
+        );
+    } catch (e) {}
+
+    var gate =
+      $("#access-gate");
+
+    if (gate) {
+      gate.style.display =
+        "none";
+    }
+
+    stopLockedTimers();
+
+    if (state.leaseTimer) {
+      clearInterval(
+        state.leaseTimer
+      );
+    }
+
+    state.leaseTimer =
+      setInterval(
+        checkUnlockedLease,
+        2000
+      );
+
+    if (
+      state.screen !==
+      "menu"
+    ) {
+      goMenu();
+    }
+
+    if (remoteProfile) {
+      setTimeout(
+        function () {
+          doLogin(
+            remoteProfile,
+            true
+          ).catch(
+            function () {}
+          );
+        },
+        80
+      );
+    }
+  }
+
+  function lockAccess(message) {
+    state.accessLocked = true;
+    state.accessResolving = false;
+
+    if (state.leaseTimer) {
+      clearInterval(
+        state.leaseTimer
+      );
+      state.leaseTimer = null;
+    }
+
+    var gate =
+      $("#access-gate");
+
+    if (gate) {
+      gate.style.display =
+        "block";
+    }
+
+    var status =
+      $("#access-status");
+
+    if (status && message) {
+      status.textContent =
+        message;
+    }
+
+    loadPixCheckout();
+    startLockedTimers();
+  }
+
+  function getOrCreatePixPolicy() {
+    var policy =
+      readJsonStorage(
+        pixPolicyStorageKey()
+      );
+
+    if (!policy) {
+      policy = {
+        source: "pix",
+        duration: "month",
+        expiresAt:
+          addCalendarMonthsIso(
+            new Date(),
+            1
+          )
+      };
+
+      writeJsonStorage(
+        pixPolicyStorageKey(),
+        policy
+      );
+    }
+
+    return policy;
+  }
+
+  function resolveGrantedAccess() {
+    if (
+      !state.accessLocked ||
+      state.accessResolving
+    ) {
+      return;
+    }
+
+    state.accessResolving = true;
+
+    fetchRemoteDeviceEntry(true)
+      .then(function (entry) {
+        if (entry) {
+          var policy =
+            policyFromEntry(entry);
+
+          if (
+            entry.active === false ||
+            !isPolicyValid(policy)
+          ) {
+            cacheAccessPolicy(
+              policy
+            );
+
+            var status =
+              $("#access-status");
+
+            if (status) {
+              status.textContent =
+                "Acesso vencido. Renove pelo PIX ou Admin.";
+            }
+
+            state.currentPolicy =
+              policy;
+
+            return null;
+          }
+
+          return applyRemoteXtream(
+            entry
+          ).then(function (profile) {
+            unlockAccess(
+              policy,
+              profile
+            );
+
+            return true;
+          });
+        }
+
+        /*
+         * Sem política do Admin:
+         * tratamos como liberação via PIX.
+         * O webhook atual já libera o hash no Supabase;
+         * esta versão deixa a TV preparada para um mês.
+         */
+        var pixPolicy =
+          getOrCreatePixPolicy();
+
+        if (
+          !isPolicyValid(
+            pixPolicy
+          )
+        ) {
+          var pixStatus =
+            $("#access-status");
+
+          if (pixStatus) {
+            pixStatus.textContent =
+              "Acesso PIX vencido. Faça um novo pagamento.";
+          }
+
+          state.currentPolicy =
+            pixPolicy;
+
+          return null;
+        }
+
+        unlockAccess(
+          pixPolicy,
+          null
+        );
+
+        return true;
+      })
+      .finally(function () {
+        state.accessResolving =
+          false;
+      });
+  }
+
+  function requestAccessState() {
+    return fetch(
+      ACCESS_URL,
+      {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type":
+            "application/json",
+          "apikey":
+            ACCESS_KEY,
+          "Authorization":
+            "Bearer " +
+            ACCESS_KEY
+        },
+        body: JSON.stringify({
+          p_hash:
+            state.accessHash
+        })
+      }
+    )
+      .then(function (r) {
+        if (!r.ok) {
+          throw new Error(
+            "HTTP " + r.status
+          );
+        }
+
+        return r.json();
+      })
+      .then(function (granted) {
+        return granted === true;
+      });
+  }
+
+  function checkAccessNow() {
+    if (!state.accessLocked) {
+      return;
+    }
+
+    requestAccessState()
+      .then(function (granted) {
+        if (granted) {
+          var status =
+            $("#access-status");
+
+          if (status) {
+            status.textContent =
+              "Liberação encontrada. Validando acesso...";
+          }
+
+          resolveGrantedAccess();
+          return;
+        }
+
+        var status =
+          $("#access-status");
+
+        if (status) {
+          status.textContent =
+            "Aguardando liberação...";
+        }
+      })
+      .catch(function () {
+        var status =
+          $("#access-status");
+
+        if (status) {
+          status.textContent =
+            "Aguardando liberação...";
+        }
+      });
+  }
+
+  function checkUnlockedLease() {
+    if (state.accessLocked) {
+      return;
+    }
+
+    if (
+      state.currentPolicy &&
+      !isPolicyValid(
+        state.currentPolicy
+      )
+    ) {
+      lockAccess(
+        "Acesso vencido. Renove pelo PIX ou Admin."
+      );
+      return;
+    }
+
+    requestAccessState()
+      .then(function (granted) {
+        if (!granted) {
+          state.remoteEntryLoaded =
+            false;
+
+          lockAccess(
+            "Acesso aguardando renovação..."
+          );
+        }
+      })
+      .catch(function () {
+        /*
+         * Se a internet oscilar, não derruba
+         * uma sessão ainda dentro do prazo.
+         */
+      });
+  }
+
+  function loadPixCheckout() {
+    if (
+      !state.accessLocked ||
+      !state.accessHash
+    ) {
+      return;
+    }
+
+    var qr =
+      $("#access-qr");
+
+    var paymentStatus =
+      $("#access-payment-status");
 
     fetch(
       PIX_CHECKOUT_URL,
@@ -270,22 +949,36 @@
         method: "POST",
         cache: "no-store",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type":
+            "application/json"
         },
         body: JSON.stringify({
-          device_hash: state.accessHash
+          device_hash:
+            state.accessHash
         })
       }
     )
       .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
+        if (!r.ok) {
+          throw new Error(
+            "HTTP " + r.status
+          );
+        }
+
         return r.json();
       })
       .then(function (data) {
-        if (!data || data.ready !== true || !data.qr_data_url) {
+        if (
+          !data ||
+          data.ready !== true ||
+          !data.qr_data_url
+        ) {
           if (qr) {
-            qr.removeAttribute("src");
-            qr.style.display = "none";
+            qr.removeAttribute(
+              "src"
+            );
+            qr.style.display =
+              "none";
           }
 
           if (paymentStatus) {
@@ -297,19 +990,25 @@
         }
 
         if (qr) {
-          qr.src = data.qr_data_url;
-          qr.style.display = "block";
+          qr.src =
+            data.qr_data_url;
+
+          qr.style.display =
+            "block";
         }
 
         if (paymentStatus) {
           paymentStatus.textContent =
-            "Escaneie o QR Code e pague R$ 25,00. A liberação é automática.";
+            "Escaneie o QR Code e pague R$ 25,00. O acesso será válido por 1 mês.";
         }
       })
       .catch(function () {
         if (qr) {
-          qr.removeAttribute("src");
-          qr.style.display = "none";
+          qr.removeAttribute(
+            "src"
+          );
+          qr.style.display =
+            "none";
         }
 
         if (paymentStatus) {
@@ -319,88 +1018,64 @@
       });
   }
 
-  function checkAccessNow() {
-    if (!state.accessLocked) return;
-
-    var status = $("#access-status");
-
-    fetch(
-      ACCESS_URL,
-      {
-        method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": ACCESS_KEY,
-          "Authorization": "Bearer " + ACCESS_KEY
-        },
-        body: JSON.stringify({
-          p_hash: state.accessHash
-        })
-      }
-    )
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (granted) {
-        if (granted === true) {
-          if (status) status.textContent = "Acesso liberado.";
-          unlockAccess();
-          return;
-        }
-
-        if (status) status.textContent = "Aguardando liberação...";
-      })
-      .catch(function () {
-        if (status) status.textContent = "Aguardando liberação...";
-      });
-  }
-
   function initAccessGate() {
-    try {
-      if (
-        LS.getItem("stv_access_permanent_v1") ===
-        "1"
-      ) {
-        state.accessLocked = false;
+    var id =
+      getDeviceId();
 
-        var oldGate = $("#access-gate");
-        if (oldGate) {
-          oldGate.style.display = "none";
-        }
+    var normalized =
+      normalizeDeviceId(id);
 
-        return;
-      }
-    } catch (e) {}
+    state.accessDeviceId =
+      normalized;
 
-    var id = getDeviceId();
-    var normalized = normalizeDeviceId(id);
+    state.accessHash =
+      sha256hex(normalized);
 
-    state.accessDeviceId = normalized;
-    state.accessHash = sha256hex(normalized);
+    var el =
+      $("#access-device-id");
 
-    var el = $("#access-device-id");
-    if (el) el.textContent = normalized;
+    if (el) {
+      el.textContent =
+        normalized;
+    }
 
     try {
-      if (
-        LS.getItem("stv_access_granted_hash") ===
-        state.accessHash
-      ) {
-        unlockAccess();
-        return;
-      }
+      LS.removeItem(
+        "stv_access_permanent_v1"
+      );
+
+      document.documentElement
+        .classList.remove(
+          "access-permanent"
+        );
     } catch (e) {}
+
+    var cachedPolicy =
+      getCachedAccessPolicy();
+
+    if (
+      cachedPolicy &&
+      isPolicyValid(
+        cachedPolicy
+      )
+    ) {
+      unlockAccess(
+        cachedPolicy,
+        null
+      );
+
+      /*
+       * Revalida silenciosamente no backend.
+       */
+      checkUnlockedLease();
+      return;
+    }
+
+    state.accessLocked = true;
 
     loadPixCheckout();
     checkAccessNow();
-
-    state.accessTimer =
-      setInterval(checkAccessNow, 500);
-
-    state.pixTimer =
-      setInterval(loadPixCheckout, 10000);
+    startLockedTimers();
   }
 
   /* ---------------- Estado ---------------- */
@@ -421,7 +1096,13 @@
     accessDeviceId: "",
     accessHash: "",
     accessTimer: null,
-    pixTimer: null
+    pixTimer: null,
+    leaseTimer: null,
+    accessResolving: false,
+    currentPolicy: null,
+    remoteEntry: null,
+    remoteEntryLoaded: false,
+    remoteEntryFetchedAt: 0
   };
 
   /* ---------------- Cache rápido ---------------- */
