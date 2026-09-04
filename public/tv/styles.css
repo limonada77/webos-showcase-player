@@ -488,3 +488,5 @@ body,
 }
 .list-remove.focused { background: #e50914; color: #fff; box-shadow: var(--focus); }
 #lists-add { margin-top: 8px; width: auto; display: inline-block; padding: 14px 28px; }
+#screen-search .grid .card, #screen-search .grid .card.poster { width: calc((100% - 100px) / 6); }
+#screen-search .grid .card img, #screen-search .grid .card .ph { height: 260px; }
