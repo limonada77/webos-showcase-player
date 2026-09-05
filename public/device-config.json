@@ -222,13 +222,13 @@
     },
     {
       "hash": "a70d1c1c391dcd2d8841c138337df4e5921b47730e5159c14e02c2c71908f646",
-      "active": true,
-      "duration": "forever",
-      "expiresAt": null,
-      "source": "admin",
-      "updatedAt": 1788646665854,
+      "active": false,
+      "duration": "block",
+      "expiresAt": "2026-09-05T22:18:08.953Z",
+      "source": "admin-block",
+      "updatedAt": 1788646689547,
       "xtream_enc": "v1.J1nYN0YvAiBubolG.JGOMBvcGI\/blE2D0SzSFIRL7o43D0u5cIZQaDgFxG09B\/QrzIFn62AzTuT6YuH+Jkx0RlmUKytr76Y+zflMMIwstbILDQg158OPGD18YcwvhqZk="
     }
   ],
-  "updatedAt": 1788646665854
+  "updatedAt": 1788646689547
 }
