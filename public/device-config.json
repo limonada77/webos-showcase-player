@@ -201,7 +201,16 @@
       "source": "admin",
       "updatedAt": 1788576240895,
       "xtream_enc": "v1.g0d+9pRPx\/oKWkkv.tMdyLq2CY8w0XkptVttuNY8Ufu0JgPd1aK6NfO8yNcnhPqO6sO4yYYyIPklyEP\/mBw5zvK3oKvjDOCmtbBotCNrmWBD\/4O5s\/OOf1OMwl3cmzlE="
+    },
+    {
+      "hash": "570bb196a6d1f745e767fa9f6b2dceeba0f4a73f981bb26d58aee9e441dae117",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "admin",
+      "updatedAt": 1788581541440,
+      "xtream_enc": "v1.VPWlbUQcZcF1zykt.8yAFqm8xiMb1mqT72b+4Guw7AfbA6oenwnhrZqX3xl6iKTRJ2oYj71teaQP4HjtUqrOpCmS3jC\/mpn6ezLhcEh9XsCyFok3z5KCre0qhrs7b4Hg="
     }
   ],
-  "updatedAt": 1788576240895
+  "updatedAt": 1788581541440
 }
