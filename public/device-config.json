@@ -192,7 +192,16 @@
       "source": "admin",
       "updatedAt": 1788561702969,
       "xtream_enc": "v1.lESnMCkwDEc9RHrk.F2W5gzaeXpaB0d+ncbw1tz4OFIJsHvdpzfa9f69gp0k0QF0cO8i6DFaOuDNb992UrFj2ncCbbjitouofWDAcd41OfhXt9GovmuSqTRBt4hjsRh8="
+    },
+    {
+      "hash": "94fcc76b087848c525de93cc84251be5890300761347bb87af256d26efe11f5e",
+      "active": true,
+      "duration": "month",
+      "expiresAt": "2026-10-05T02:43:59.871Z",
+      "source": "admin",
+      "updatedAt": 1788576240895,
+      "xtream_enc": "v1.g0d+9pRPx\/oKWkkv.tMdyLq2CY8w0XkptVttuNY8Ufu0JgPd1aK6NfO8yNcnhPqO6sO4yYYyIPklyEP\/mBw5zvK3oKvjDOCmtbBotCNrmWBD\/4O5s\/OOf1OMwl3cmzlE="
     }
   ],
-  "updatedAt": 1788561702969
+  "updatedAt": 1788576240895
 }
