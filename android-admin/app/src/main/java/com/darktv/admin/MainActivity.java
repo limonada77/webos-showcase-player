@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.util.Base64;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -114,17 +116,60 @@ public class MainActivity extends Activity {
         root.addView(durationTitle);
 
         durationSpinner = new Spinner(this);
+        durationSpinner.setBackgroundColor(
+            Color.rgb(32, 32, 36)
+        );
+
         String[] durations = new String[] {
+            "4 horas",
+            "1 dia",
             "1 mês",
             "1 ano",
-            "Para sempre"
+            "Para sempre",
+            "Bloquear acesso"
         };
+
         ArrayAdapter<String> durationAdapter =
-            new ArrayAdapter<>(
+            new ArrayAdapter<String>(
                 this,
-                android.R.layout.simple_spinner_dropdown_item,
+                android.R.layout.simple_spinner_item,
                 durations
-            );
+            ) {
+                @Override
+                public View getView(
+                    int position,
+                    View convertView,
+                    ViewGroup parent
+                ) {
+                    return styleDurationView(
+                        super.getView(
+                            position,
+                            convertView,
+                            parent
+                        )
+                    );
+                }
+
+                @Override
+                public View getDropDownView(
+                    int position,
+                    View convertView,
+                    ViewGroup parent
+                ) {
+                    return styleDurationView(
+                        super.getDropDownView(
+                            position,
+                            convertView,
+                            parent
+                        )
+                    );
+                }
+            };
+
+        durationAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        );
+
         durationSpinner.setAdapter(durationAdapter);
 
         LinearLayout.LayoutParams spinnerParams =
@@ -268,6 +313,7 @@ public class MainActivity extends Activity {
             !host.isEmpty() || !user.isEmpty() || !pass.isEmpty();
 
         if (
+            !blocking &&
             hasAnyListField &&
             (host.isEmpty() || user.isEmpty() || pass.isEmpty())
         ) {
@@ -276,9 +322,17 @@ public class MainActivity extends Activity {
         }
 
         final String duration = selectedDuration();
-        final String expiresAt = calculateExpiresAt(duration);
+        final boolean blocking =
+            "block".equals(duration);
 
-        status.setText("Gravando configuração...");
+        final String expiresAt =
+            calculateExpiresAt(duration);
+
+        status.setText(
+            blocking
+                ? "Bloqueando acesso..."
+                : "Gravando configuração..."
+        );
         status.setTextColor(Color.rgb(250, 204, 21));
 
         new Thread(() -> {
@@ -287,7 +341,7 @@ public class MainActivity extends Activity {
 
                 String encryptedXtream = null;
 
-                if (hasAnyListField) {
+                if (!blocking && hasAnyListField) {
                     JSONObject xtream = new JSONObject();
                     xtream.put("host", host);
                     xtream.put("user", user);
@@ -302,13 +356,35 @@ public class MainActivity extends Activity {
                     hash,
                     duration,
                     expiresAt,
-                    encryptedXtream
+                    encryptedXtream,
+                    !blocking
                 );
+
+                if (blocking) {
+                    updateAccessBackend(
+                        adminKey,
+                        hash,
+                        false
+                    );
+
+                    runOnUiThread(() -> {
+                        status.setText(
+                            "Acesso bloqueado para " +
+                            device +
+                            ". O modal PIX continuará aparecendo."
+                        );
+                        status.setTextColor(
+                            Color.rgb(248, 113, 113)
+                        );
+                    });
+
+                    return;
+                }
 
                 /*
                  * Pulso OFF -> ON:
-                 * faz a versão nova da TV perceber também renovações
-                 * e troca de lista em um aparelho que já estava ativo.
+                 * faz a versão nova da TV perceber renovação
+                 * de prazo ou troca de lista.
                  */
                 updateAccessBackend(adminKey, hash, false);
 
@@ -345,11 +421,15 @@ public class MainActivity extends Activity {
     }
 
     private String selectedDuration() {
-        int position = durationSpinner.getSelectedItemPosition();
+        int position =
+            durationSpinner.getSelectedItemPosition();
 
-        if (position == 1) return "year";
-        if (position == 2) return "forever";
-        return "month";
+        if (position == 0) return "hours4";
+        if (position == 1) return "day";
+        if (position == 2) return "month";
+        if (position == 3) return "year";
+        if (position == 4) return "forever";
+        return "block";
     }
 
     private String calculateExpiresAt(String duration) {
@@ -359,9 +439,13 @@ public class MainActivity extends Activity {
 
         Calendar cal = Calendar.getInstance();
 
-        if ("year".equals(duration)) {
+        if ("hours4".equals(duration)) {
+            cal.add(Calendar.HOUR_OF_DAY, 4);
+        } else if ("day".equals(duration)) {
+            cal.add(Calendar.DAY_OF_YEAR, 1);
+        } else if ("year".equals(duration)) {
             cal.add(Calendar.YEAR, 1);
-        } else {
+        } else if ("month".equals(duration)) {
             cal.add(Calendar.MONTH, 1);
         }
 
@@ -424,7 +508,8 @@ public class MainActivity extends Activity {
         String deviceHash,
         String duration,
         String expiresAt,
-        String encryptedXtream
+        String encryptedXtream,
+        boolean active
     ) throws Exception {
 
         String api =
@@ -504,7 +589,7 @@ public class MainActivity extends Activity {
                 : new JSONObject();
 
         item.put("hash", deviceHash);
-        item.put("active", true);
+        item.put("active", active);
         item.put("duration", duration);
         item.put(
             "expiresAt",
@@ -512,7 +597,12 @@ public class MainActivity extends Activity {
                 ? JSONObject.NULL
                 : expiresAt
         );
-        item.put("source", "admin");
+        item.put(
+            "source",
+            active
+                ? "admin"
+                : "admin-block"
+        );
         item.put(
             "updatedAt",
             System.currentTimeMillis()
@@ -858,6 +948,37 @@ public class MainActivity extends Activity {
         }
 
         return out.toString();
+    }
+
+    private View styleDurationView(View view) {
+        if (view instanceof TextView) {
+            TextView tv = (TextView) view;
+
+            tv.setTextSize(17);
+            tv.setPadding(
+                dp(16),
+                dp(12),
+                dp(16),
+                dp(12)
+            );
+            tv.setBackgroundColor(
+                Color.rgb(32, 32, 36)
+            );
+
+            if (
+                "Bloquear acesso".contentEquals(
+                    tv.getText()
+                )
+            ) {
+                tv.setTextColor(
+                    Color.rgb(248, 113, 113)
+                );
+            } else {
+                tv.setTextColor(Color.WHITE);
+            }
+        }
+
+        return view;
     }
 
     private void fail(String message) {
