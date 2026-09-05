@@ -214,12 +214,12 @@
     {
       "hash": "aafdb3c7dc7335803d878f22700f5f432ebe434ad81545403c37b332ee25dc55",
       "active": true,
-      "duration": "month",
-      "expiresAt": "2026-10-05T22:00:29.252Z",
+      "duration": "forever",
+      "expiresAt": null,
       "source": "admin",
-      "updatedAt": 1788645629712,
-      "xtream_enc": "v1.eqNJ+REhNKB\/XEk9.4Hai1gUx5f7TUZFuBAJYR1IVqWb10EftPcWBhSekpnwsrGwuzohBXh1OK0N+BbpQUTBkcHbZ3fF4oo1+RmDf6fZ4shfXpEG0mfxloiefQkx+ruo="
+      "updatedAt": 1788645776727,
+      "xtream_enc": "v1.Ff6JHsrBDmjmgRiy.XowA9TYWFGxbSsDAg0kVJsT5q9klD+TACz3Xwp972eCyeWCTNwJFpPyWINnVrf2rPKM6miDwyp1xt+sdPvQkOujn\/\/y4xkdFL6rEtqQ+JfHJEAI="
     }
   ],
-  "updatedAt": 1788645629712
+  "updatedAt": 1788645776727
 }
