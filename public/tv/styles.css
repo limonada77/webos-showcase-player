@@ -193,7 +193,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
   align-content: flex-start;
   justify-content: space-between;
   column-gap: 0;
-  row-gap: 62px;
+  row-gap: 76px;
   padding: 10px 8px 60px 8px;
   overflow: hidden;
 }
@@ -259,6 +259,8 @@ input.focused { border-color: #fff; background: #2a2a30; }
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
   font-size: 15px;
   font-weight: 700;
   color: #f4f4f5;
