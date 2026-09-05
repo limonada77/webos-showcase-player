@@ -309,6 +309,13 @@ public class MainActivity extends Activity {
             return;
         }
 
+        final String duration = selectedDuration();
+        final boolean blocking =
+            "block".equals(duration);
+
+        final String expiresAt =
+            calculateExpiresAt(duration);
+
         boolean hasAnyListField =
             !host.isEmpty() || !user.isEmpty() || !pass.isEmpty();
 
@@ -320,13 +327,6 @@ public class MainActivity extends Activity {
             fail("Para enviar a lista, preencha servidor, usuário e senha.");
             return;
         }
-
-        final String duration = selectedDuration();
-        final boolean blocking =
-            "block".equals(duration);
-
-        final String expiresAt =
-            calculateExpiresAt(duration);
 
         status.setText(
             blocking
