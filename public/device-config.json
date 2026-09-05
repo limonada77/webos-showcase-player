@@ -231,13 +231,13 @@
     },
     {
       "hash": "b12d7a5d8f35e58ea23c87b504d1b159ed3540bff689bbd644664eb1442bbd63",
-      "active": true,
-      "duration": "forever",
-      "expiresAt": null,
-      "source": "admin",
-      "updatedAt": 1788647147549,
+      "active": false,
+      "duration": "block",
+      "expiresAt": "2026-09-05T22:26:13.598Z",
+      "source": "admin-block",
+      "updatedAt": 1788647173963,
       "xtream_enc": "v1.gQLLQFzlLVZhxTrE.zUZPElAlDcMSt+FbFa6CY8ZTmGw6PbRZKZcF7ENhdeFlcgpeKD64I84VIA9rI3jecB0+YKV4s7U1E3WxmmAKFoLb7qiD24zo09U0lYAMyR7GbfA="
     }
   ],
-  "updatedAt": 1788647147549
+  "updatedAt": 1788647173963
 }
