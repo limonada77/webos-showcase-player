@@ -1475,7 +1475,7 @@
       (dir === "left" || dir === "right")
     ) {
       var epButtons =
-        $(".ep.focusable", epTrack);
+        $$(".ep.focusable", epTrack);
 
       var epPos =
         epButtons.indexOf(current);
