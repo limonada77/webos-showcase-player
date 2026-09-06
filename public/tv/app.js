@@ -41,6 +41,9 @@
   var PIX_STATUS_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-status";
 
+  var LIST_CONNECTIONS_URL =
+    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/list-connections";
+
   var DEVICE_CONFIG_URL =
     "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/device-config.json?ref=main";
 
@@ -1456,6 +1459,43 @@
         return;
       }
     }
+
+    /*
+     * ERICKTV_EPISODE_ROW_NAV_V77
+     * Quando o foco está nos episódios, ◀/▶ percorrem SOMENTE
+     * a trilha de episódios. Não deixa o cálculo geométrico
+     * saltar para os botões de temporada.
+     */
+    var epTrack =
+      current.closest &&
+      current.closest(".ep-track");
+
+    if (
+      epTrack &&
+      (dir === "left" || dir === "right")
+    ) {
+      var epButtons =
+        $(".ep.focusable", epTrack);
+
+      var epPos =
+        epButtons.indexOf(current);
+
+      var nextEpPos =
+        epPos +
+        (dir === "right" ? 1 : -1);
+
+      if (
+        nextEpPos >= 0 &&
+        nextEpPos < epButtons.length
+      ) {
+        setFocus(
+          epButtons[nextEpPos]
+        );
+      }
+
+      return;
+    }
+
     var cr = current.getBoundingClientRect();
     var cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
     var best = null, bestScore = Infinity;
@@ -1504,6 +1544,12 @@
       state.addingList = false;
       $("#user-name").textContent = profile.user;
       renderProfile();
+
+      syncListConnection(
+        profile,
+        "register"
+      ).catch(function () {});
+
       return loadCatalog();
     }).catch(function (e) {
       state.profile = null;
@@ -2207,6 +2253,100 @@
 
 
   /* ---------------- Perfil ---------------- */
+  function currentListHash(profile) {
+    var p = profile || state.profile || {};
+
+    if (!p.host || !p.user || !p.pass) {
+      return "";
+    }
+
+    return sha256hex(
+      normHost(p.host) +
+      "|" +
+      String(p.user) +
+      "|" +
+      String(p.pass)
+    );
+  }
+
+  function syncListConnection(profile, action) {
+    var p = profile || state.profile;
+    var deviceHash = String(state.accessHash || "").toLowerCase();
+    var listHash = currentListHash(p);
+    var mode = action || "register";
+
+    if (!deviceHash) {
+      return Promise.resolve({ count: 0 });
+    }
+
+    if (mode !== "remove" && !listHash) {
+      return Promise.resolve({ count: 0 });
+    }
+
+    return fetch(
+      LIST_CONNECTIONS_URL,
+      {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_hash: deviceHash,
+          list_hash: listHash,
+          action: mode
+        })
+      }
+    )
+      .then(function (r) {
+        if (!r.ok) {
+          throw new Error("HTTP " + r.status);
+        }
+
+        return r.json();
+      });
+  }
+
+  function refreshDarkTvConnections() {
+    var el = $("#pf-darktv");
+
+    if (!el) {
+      return;
+    }
+
+    if (!state.profile) {
+      el.textContent = "0 aparelho(s)";
+      return;
+    }
+
+    el.textContent = "Consultando…";
+
+    syncListConnection(
+      state.profile,
+      "register"
+    )
+      .then(function (data) {
+        var count =
+          data &&
+          data.count != null
+            ? parseInt(data.count, 10)
+            : 0;
+
+        if (!isFinite(count)) {
+          count = 0;
+        }
+
+        el.textContent =
+          count +
+          (count === 1
+            ? " aparelho"
+            : " aparelhos");
+      })
+      .catch(function () {
+        el.textContent = "Indisponível";
+      });
+  }
+
   function fmtDate(ts) {
     if (!ts) return "Sem vencimento";
     var n = parseInt(ts, 10);
@@ -2235,6 +2375,7 @@
     $("#pf-status").textContent = u.status ? String(u.status) : (state.profile ? "Ativa" : "—");
     $("#pf-conn").textContent = (u.active_cons != null ? u.active_cons : "0") + " / " + (u.max_connections != null ? u.max_connections : "—");
     $("#pf-host").textContent = p.host || "—";
+    refreshDarkTvConnections();
   }
 
   function openProfile() {
@@ -3373,6 +3514,13 @@
 
   /* ---------------- Sair ---------------- */
   function logout() {
+    if (state.profile) {
+      syncListConnection(
+        state.profile,
+        "remove"
+      ).catch(function () {});
+    }
+
     try { LS.removeItem("stv_profile"); } catch (e) {}
     try { LS.removeItem(CATALOG_CACHE_KEY); } catch (e) {}
     /* Logout não apaga o histórico da conta. */
