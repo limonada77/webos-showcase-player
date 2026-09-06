@@ -3319,6 +3319,17 @@
     PLAY: 415, PAUSE: 19, STOP: 413, FF: 417, RW: 412, PLAYPAUSE: 179
   };
 
+  var pressCard = null, pressTimer = null, pressLong = false;
+
+  function onKeyUp(e) {
+    if (e.keyCode !== KEY.ENTER || !pressCard) return;
+    var card = pressCard;
+    pressCard = null;
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    if (!pressLong && !state.accessLocked && state.screen !== "player") card.click();
+    pressLong = false;
+  }
+
   function onKey(e) {
     var k = e.keyCode;
     var typing = document.activeElement && document.activeElement.tagName === "INPUT";
