@@ -1461,38 +1461,48 @@
     }
 
     /*
-     * ERICKTV_EPISODE_ROW_NAV_V77
-     * Quando o foco está nos episódios, ◀/▶ percorrem SOMENTE
-     * a trilha de episódios. Não deixa o cálculo geométrico
-     * saltar para os botões de temporada.
+     * ERICKTV_HORIZONTAL_TRAP_V78
+     * Toda trilha horizontal (.row-track) fica presa nela mesma.
+     * ◀ no primeiro item e ▶ no último NÃO podem pular para outro
+     * botão, categoria ou canto da tela.
+     *
+     * Isso vale para episódios e também para todas as fileiras
+     * horizontais da Home/Continuar/Favoritos/etc.
      */
-    var epTrack =
+    var horizontalTrack =
       current.closest &&
-      current.closest(".ep-track");
+      current.closest(".row-track");
 
     if (
-      epTrack &&
+      horizontalTrack &&
       (dir === "left" || dir === "right")
     ) {
-      var epButtons =
-        $$(".ep.focusable", epTrack);
+      var trackItems =
+        $(".focusable", horizontalTrack)
+          .filter(function (el) {
+            return (
+              el.offsetParent !== null ||
+              el.offsetWidth > 0
+            );
+          });
 
-      var epPos =
-        epButtons.indexOf(current);
+      var trackPos =
+        trackItems.indexOf(current);
 
-      var nextEpPos =
-        epPos +
+      var nextTrackPos =
+        trackPos +
         (dir === "right" ? 1 : -1);
 
       if (
-        nextEpPos >= 0 &&
-        nextEpPos < epButtons.length
+        nextTrackPos >= 0 &&
+        nextTrackPos < trackItems.length
       ) {
         setFocus(
-          epButtons[nextEpPos]
+          trackItems[nextTrackPos]
         );
       }
 
+      /* No começo/fim, simplesmente permanece no item atual. */
       return;
     }
 
