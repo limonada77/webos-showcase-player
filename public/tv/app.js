@@ -3201,16 +3201,10 @@
     destroyPlayer();
     state._changingMedia = false;
 
-    if (hadProgress && (wasKind === "movie" || wasKind === "series")) {
-      /* Parou no meio: volta para Continuar assistindo da própria categoria. */
-      state.playerOrigin = null;
-      state.playing = null;
-      state.detail = null;
-      state.detailOrigin = null;
-      state.prevGrid = "grid";
-      openGrid(wasKind, "__cont");
-      return;
-    }
+    /* O conteúdo entra em "Continuar assistindo" em silêncio:
+       a tela volta exatamente para onde estava, sem abrir essa categoria. */
+    refreshGridCats();
+
 
     state.playerOrigin = null;
     state.playing = null;
