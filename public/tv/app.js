@@ -1461,13 +1461,16 @@
     }
 
     /*
-     * ERICKTV_HORIZONTAL_TRAP_V78
-     * Toda trilha horizontal (.row-track) fica presa nela mesma.
-     * ◀ no primeiro item e ▶ no último NÃO podem pular para outro
-     * botão, categoria ou canto da tela.
+     * ERICKTV_EDGE_TRAP_V79
      *
-     * Isso vale para episódios e também para todas as fileiras
-     * horizontais da Home/Continuar/Favoritos/etc.
+     * Trilhas horizontais:
+     * - dentro da trilha, ◀/▶ navegam normalmente item por item;
+     * - ◀ no PRIMEIRO item permanece nele;
+     * - ▶ no ÚLTIMO item permanece nele.
+     *
+     * O erro anterior usava $() (querySelector) aqui, pegando só um
+     * elemento. Isso acabava bloqueando a trilha inteira. Agora usamos
+     * $() e a navegação EP 1 → EP 2 → EP 3... funciona normalmente.
      */
     var horizontalTrack =
       current.closest &&
@@ -1489,6 +1492,10 @@
       var trackPos =
         trackItems.indexOf(current);
 
+      if (trackPos < 0) {
+        return;
+      }
+
       var nextTrackPos =
         trackPos +
         (dir === "right" ? 1 : -1);
@@ -1502,8 +1509,152 @@
         );
       }
 
-      /* No começo/fim, simplesmente permanece no item atual. */
+      /* Só trava quando realmente chegou no começo/fim. */
       return;
+    }
+
+    /*
+     * Fileiras verticais da Home/Continuar/etc:
+     * ▲/▼ continuam mudando de fileira normalmente.
+     * Só prendemos no limite superior/inferior para não saltar
+     * para botão, topo, categoria ou outro canto da tela.
+     */
+    if (
+      horizontalTrack &&
+      (dir === "up" || dir === "down")
+    ) {
+      var rowsHost =
+        horizontalTrack.closest &&
+        horizontalTrack.closest(".rows");
+
+      if (rowsHost) {
+        var rowTracks =
+          $(".row-track", rowsHost)
+            .filter(function (track) {
+              return (
+                track.offsetParent !== null ||
+                track.offsetWidth > 0
+              );
+            });
+
+        var rowIndex =
+          rowTracks.indexOf(
+            horizontalTrack
+          );
+
+        var targetRowIndex =
+          rowIndex +
+          (dir === "down" ? 1 : -1);
+
+        if (
+          targetRowIndex < 0 ||
+          targetRowIndex >= rowTracks.length
+        ) {
+          return;
+        }
+
+        var targetItems =
+          $(".focusable", rowTracks[targetRowIndex])
+            .filter(function (el) {
+              return (
+                el.offsetParent !== null ||
+                el.offsetWidth > 0
+              );
+            });
+
+        if (!targetItems.length) {
+          return;
+        }
+
+        var curRect =
+          current.getBoundingClientRect();
+
+        var curCenter =
+          curRect.left +
+          curRect.width / 2;
+
+        var nearest =
+          targetItems[0];
+
+        var nearestDistance =
+          Infinity;
+
+        targetItems.forEach(
+          function (el) {
+            var rect =
+              el.getBoundingClientRect();
+
+            var center =
+              rect.left +
+              rect.width / 2;
+
+            var distance =
+              Math.abs(
+                center -
+                curCenter
+              );
+
+            if (
+              distance <
+              nearestDistance
+            ) {
+              nearestDistance =
+                distance;
+
+              nearest = el;
+            }
+          }
+        );
+
+        setFocus(nearest);
+        return;
+      }
+    }
+
+    /*
+     * Grade 4xN:
+     * ▲/▼ avançam uma fileira; na primeira/última fileira ficam no
+     * próprio card em vez de escapar para outro controle da tela.
+     */
+    var gridHost =
+      current.closest &&
+      current.closest("#grid-items");
+
+    if (
+      gridHost &&
+      (dir === "up" || dir === "down")
+    ) {
+      var gridItems =
+        $(".card.focusable", gridHost)
+          .filter(function (el) {
+            return (
+              el.offsetParent !== null ||
+              el.offsetWidth > 0
+            );
+          });
+
+      var gridPos =
+        gridItems.indexOf(current);
+
+      if (gridPos >= 0) {
+        var columns = 4;
+        var gridNext =
+          gridPos +
+          (dir === "down"
+            ? columns
+            : -columns);
+
+        if (
+          gridNext >= 0 &&
+          gridNext < gridItems.length
+        ) {
+          setFocus(
+            gridItems[gridNext]
+          );
+        }
+
+        return;
+      }
     }
 
     var cr = current.getBoundingClientRect();
