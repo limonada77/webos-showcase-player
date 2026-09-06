@@ -3357,9 +3357,20 @@
       if (typing && state.screen === "search") { runSearch(document.activeElement.value); return; }
       if (typing && state.screen === "login" && current && current.tagName === "INPUT") { move("down"); return; }
       e.preventDefault();
+      /* Cartão de conteúdo: clique curto abre, clique longo mostra favoritos. */
+      if (current && current._item && current.classList.contains("card") && !favPopOpen()) {
+        if (pressCard) return; /* repetição do OK segurado */
+        pressCard = current; pressLong = false;
+        pressTimer = setTimeout(function () {
+          pressLong = true;
+          openFavPop(pressCard._item, pressCard._kind);
+        }, 650);
+        return;
+      }
       if (current) current.click();
       return;
     }
+
 
     if (k === KEY.LEFT || k === KEY.RIGHT) {
       if (typing) return; // deixa mover o cursor dentro do campo
