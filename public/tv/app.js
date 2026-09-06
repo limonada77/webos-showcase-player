@@ -1387,6 +1387,8 @@
 
   /* ---------------- Navegação espacial ---------------- */
   function focusables() {
+    var pop = $("#fav-pop");
+    if (pop && pop.classList.contains("show")) return $$(".focusable", pop);
     var scr = $("#screen-" + state.screen);
     if (!scr) return [];
     return $$(".focusable", scr).filter(function (el) {
