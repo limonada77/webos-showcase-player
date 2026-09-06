@@ -250,12 +250,12 @@
     {
       "hash": "f850ef830627f5b6202373d39707d4893ad4e22a72c30e5b87fd14f1a9a1955f",
       "active": true,
-      "duration": "hours4",
-      "expiresAt": "2026-09-07T00:15:12.730Z",
+      "duration": "forever",
+      "expiresAt": null,
       "source": "admin",
-      "updatedAt": 1788725713299,
-      "xtream_enc": "v1.6QPyzNlNVdNR9Q6z.tqT0h6tZLbjcNd+fn\/g8qvC6T\/LK7i+BPHxKMHimLPl2hd0EQgMyFubSq5BN8JGf1jgTWIOjRaVhMQmnjzacR8VNYDIWgDkE\/vPFGTmj3dEytVAqQ3uXX+W\/D10Lu1Nk1pRCPwo="
+      "updatedAt": 1788725720884,
+      "xtream_enc": "v1.pLfIwx6qWqqwBr3i.+NOg+UgsuheQ9dWet\/94YzCTfUxQDSwyNXyabbF3qQ\/eMTOMGr6JCmajgUXpmOZrNAw0ma9JyKh2OtEfN+oJ+0jWQKy4JWLBvNAK6KD7o6UMEgWkGcw9i9uQ8fpzZ0y1+B5UIgk="
     }
   ],
-  "updatedAt": 1788725713299
+  "updatedAt": 1788725720884
 }
