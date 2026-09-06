@@ -3376,6 +3376,7 @@
   }
 
   function goBack() {
+    if (favPopOpen()) { closeFavPop(); return; }
     if (state.screen === "menu") {
       if (window.AndroidTV && window.AndroidTV.exit) window.AndroidTV.exit();
       else if (window.webOS && window.webOS.platformBack) window.webOS.platformBack();
