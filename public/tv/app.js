@@ -1495,8 +1495,8 @@
     ) {
       /*
        * $ = querySelectorAll em array.
-       * O código anterior usava $ (querySelector) e depois .filter(),
-       * o que quebrava a navegação já na Temporada 1.
+       * Assim ◀/▶ percorrem somente os botões de temporada
+       * e nunca escapam para a fileira de episódios.
        */
       var seasonItems =
         $(".season.focusable", seasonsHost)
@@ -1537,6 +1537,51 @@
         ) {
           nextSeason.click();
         }
+      }
+
+      return;
+    }
+
+    /*
+     * ERICKTV_SEASON_VERTICAL_NAV_V84
+     *
+     * A troca entre temporada e episódios é exclusivamente vertical:
+     * ▼ em uma temporada entra no primeiro episódio;
+     * ▲ em um episódio volta para a temporada ativa.
+     */
+    if (
+      seasonsHost &&
+      current.classList &&
+      current.classList.contains("season") &&
+      dir === "down"
+    ) {
+      var firstEpisode =
+        $("#dt-ep-track .ep.focusable") ||
+        $("#dt-episodes .ep.focusable");
+
+      if (firstEpisode) {
+        setFocus(firstEpisode);
+      }
+
+      return;
+    }
+
+    var episodesHost =
+      current.closest &&
+      current.closest("#dt-ep-track");
+
+    if (
+      episodesHost &&
+      current.classList &&
+      current.classList.contains("ep") &&
+      dir === "up"
+    ) {
+      var activeSeason =
+        $("#dt-seasons .season.active") ||
+        $("#dt-seasons .season.focusable");
+
+      if (activeSeason) {
+        setFocus(activeSeason);
       }
 
       return;
