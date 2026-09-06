@@ -125,11 +125,11 @@
     {
       "hash": "574f312c334e3fa873c84f30490eac3311d04a7fed65d8dbca0f32bbda361be1",
       "active": true,
-      "duration": "forever",
-      "expiresAt": null,
+      "duration": "hours4",
+      "expiresAt": "2026-09-06T04:06:01.062Z",
       "source": "admin",
-      "updatedAt": 1788555929384,
-      "xtream_enc": "v1.q4S09d12P\/qTV3Xj.qSgDqbLfeVm\/0wHd5qQAkYQb1vS2Gl9VBkZcZh9rZkGpnKHP7drH\/z3o3ytuC4R79Z1vFRjsKYpk\/eVEzfWokcxuRcnRINpwflGUx8raf8dOKpk="
+      "updatedAt": 1788653161486,
+      "xtream_enc": "v1.YIbm5jV\/Neux9zPU.JagBpbgBXIQ8oNt5sWTyh+Vnkd\/0\/KyUzd\/tcBUdhDUT9U3Nkfgg0zs2B9\/OsNr6Dpb1XP\/rgzXJhaa8x+ogQnRFiwh5hLrCj7xM0bDts16FcMn6\/+aX5uIEvS2DMkJd9J9Df1s="
     },
     {
       "hash": "404ef475f8c83f2892159e1f5dd1b780aa6ae9f6ef268ed29ad579768bd99058",
@@ -239,5 +239,5 @@
       "xtream_enc": "v1.4bSTTtQ\/3xokih55.ed1zOp2Z5UbRC2\/nHyXCUZsVAcstsgMZCE11hmXqjWpca2pVAlHeS9S1dp5m4GALyGatULoUQWmtPNyd9Hs9CFW9u+d5Q6wgp5ZKrVdCxH7Obiw="
     }
   ],
-  "updatedAt": 1788647195004
+  "updatedAt": 1788653161486
 }
