@@ -1494,12 +1494,12 @@
       (dir === "left" || dir === "right")
     ) {
       /*
-       * $ = querySelectorAll em array.
+       * $$ = querySelectorAll em array.
        * Assim ◀/▶ percorrem somente os botões de temporada
        * e nunca escapam para a fileira de episódios.
        */
       var seasonItems =
-        $(".season.focusable", seasonsHost)
+        $$(".season.focusable", seasonsHost)
           .filter(function (el) {
             return (
               el.offsetParent !== null ||
