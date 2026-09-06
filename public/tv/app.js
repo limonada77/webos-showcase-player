@@ -1694,7 +1694,24 @@
       el.innerHTML = '<div class="ph"></div>';
       el.firstChild.textContent = name;
     }
-    el.addEventListener("click", function () { openItem(item, kind); });
+    el.addEventListener("click", function () {
+      if (el._suppressClick) { el._suppressClick = false; return; }
+      openItem(item, kind);
+    });
+    /* Toque/clique longo (celular/mouse) abre favoritos. */
+    var holdT = null;
+    var startHold = function () {
+      clearTimeout(holdT);
+      holdT = setTimeout(function () { el._suppressClick = true; openFavPop(item, kind); }, 600);
+    };
+    var endHold = function () { clearTimeout(holdT); };
+    el.addEventListener("touchstart", startHold, { passive: true });
+    el.addEventListener("touchend", endHold);
+    el.addEventListener("touchmove", endHold, { passive: true });
+    el.addEventListener("touchcancel", endHold);
+    el.addEventListener("mousedown", startHold);
+    el.addEventListener("mouseup", endHold);
+    el.addEventListener("mouseleave", endHold);
     el._item = item; el._kind = kind;
     return el;
   }
