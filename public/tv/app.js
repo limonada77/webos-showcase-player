@@ -2478,6 +2478,7 @@
       cats.push({ category_id: "__cont", category_name: "Continuar assistindo", _items: cont });
       cats.push({ category_id: "__recent", category_name: "Recentes adicionados", _items: recentlyAdded(data.items, 100) });
     }
+    cats.push({ category_id: "__fav", category_name: "Favoritos", _items: favoritesOf(kind) });
     cats.push({ category_id: "__all", category_name: "Todos", _items: data.items });
     data.cats.forEach(function (c) {
       cats.push({ category_id: c.category_id, category_name: c.category_name, _items: byCategory(data.items, c.category_id) });
@@ -2487,6 +2488,7 @@
     cats.forEach(function (c) {
       var b = document.createElement("button");
       b.className = "cat focusable";
+      b._cat = c;
       var n = document.createElement("span"); n.className = "cat-name"; n.textContent = c.category_name;
       var k = document.createElement("span"); k.className = "cat-count"; k.textContent = c._items.length;
       b.appendChild(n); b.appendChild(k);
