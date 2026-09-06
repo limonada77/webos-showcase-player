@@ -154,10 +154,22 @@
     var saved = "";
 
     try {
-      saved = LS.getItem("stv_device_id_v1") || "";
+      saved =
+        LS.getItem("stv_device_id_v1") ||
+        LS.getItem("stv_device_id_backup_v1") ||
+        "";
     } catch (e) {}
 
-    if (saved) return normalizeDeviceId(saved);
+    if (saved) {
+      saved = normalizeDeviceId(saved);
+
+      try {
+        LS.setItem("stv_device_id_v1", saved);
+        LS.setItem("stv_device_id_backup_v1", saved);
+      } catch (e) {}
+
+      return saved;
+    }
 
     var bytes = [];
 
@@ -185,6 +197,7 @@
 
     try {
       LS.setItem("stv_device_id_v1", id);
+      LS.setItem("stv_device_id_backup_v1", id);
     } catch (e) {}
 
     return id;
@@ -1468,9 +1481,9 @@
      * - ◀ no PRIMEIRO item permanece nele;
      * - ▶ no ÚLTIMO item permanece nele.
      *
-     * O erro anterior usava $() (querySelector) aqui, pegando só um
-     * elemento. Isso acabava bloqueando a trilha inteira. Agora usamos
-     * $() e a navegação EP 1 → EP 2 → EP 3... funciona normalmente.
+     * A trilha não congela: EP 1 → EP 2 → EP 3... normalmente.
+     * Só no primeiro/último item a seta para fora mantém o foco
+     * no próprio item, sem escapar para temporadas ou outro controle.
      */
     var horizontalTrack =
       current.closest &&
@@ -2476,7 +2489,7 @@
     }
 
     if (!state.profile) {
-      el.textContent = "0 aparelho(s)";
+      el.textContent = "0 apps";
       return;
     }
 
@@ -2500,8 +2513,8 @@
         el.textContent =
           count +
           (count === 1
-            ? " aparelho"
-            : " aparelhos");
+            ? " app"
+            : " apps");
       })
       .catch(function () {
         el.textContent = "Indisponível";
