@@ -1901,6 +1901,89 @@
     writeHistory("continue", list.slice(0, 30));
   }
 
+  /* ---------------- Favoritos (por conta, persistente) ---------------- */
+  function getFavorites() {
+    var list = readHistory("favorites", []);
+    return Array.isArray(list) ? list : [];
+  }
+
+  function favKey(item, kind) {
+    if (!item) return "";
+    var k = kind === "resume" ? (item._kind || "movie") : kind;
+    return String(k) + ":" + String(item.series_id || item.stream_id || item.id || item.name || "");
+  }
+
+  function isFavorite(item, kind) {
+    var key = favKey(item, kind);
+    return getFavorites().some(function (f) { return f._favKey === key; });
+  }
+
+  function toggleFavorite(item, kind) {
+    var key = favKey(item, kind);
+    var list = getFavorites();
+    var exists = list.some(function (f) { return f._favKey === key; });
+    if (exists) {
+      list = list.filter(function (f) { return f._favKey !== key; });
+    } else {
+      var rec;
+      try { rec = JSON.parse(JSON.stringify(item)); } catch (e) { return false; }
+      rec._favKey = key;
+      rec._kind = kind === "resume" ? (item._kind || "movie") : kind;
+      list.unshift(rec);
+    }
+    writeHistory("favorites", list.slice(0, 500));
+    refreshGridCats();
+    return !exists;
+  }
+
+  function favoritesOf(kind) {
+    return getFavorites().filter(function (f) { return f._kind === kind; });
+  }
+
+  /* Popup de favoritos (clique longo no cartão) */
+  var favPopItem = null, favPopKind = null;
+
+  function favPopOpen() {
+    var p = $("#fav-pop");
+    return !!(p && p.classList.contains("show"));
+  }
+
+  function openFavPop(item, kind) {
+    var p = $("#fav-pop");
+    if (!p || !item) return;
+    favPopItem = item; favPopKind = kind;
+    $("#fav-title").textContent = item.name || item.title || "";
+    $("#fav-toggle").textContent = isFavorite(item, kind) ? "Remover dos favoritos" : "Adicionar aos favoritos";
+    p._prevFocus = current;
+    p.classList.add("show");
+    setTimeout(function () { setFocus($("#fav-toggle")); }, 20);
+  }
+
+  function closeFavPop() {
+    var p = $("#fav-pop");
+    if (!p) return;
+    p.classList.remove("show");
+    var prev = p._prevFocus;
+    p._prevFocus = null;
+    favPopItem = null; favPopKind = null;
+    setTimeout(function () {
+      var list = focusables();
+      if (prev && list.indexOf(prev) !== -1) setFocus(prev);
+      else if (list[0]) setFocus(list[0]);
+    }, 20);
+  }
+
+  function bindFavPop() {
+    var t = $("#fav-toggle"), c = $("#fav-cancel");
+    if (t) t.addEventListener("click", function () {
+      if (!favPopItem) { closeFavPop(); return; }
+      var added = toggleFavorite(favPopItem, favPopKind);
+      toast(added ? "Adicionado aos favoritos" : "Removido dos favoritos");
+      closeFavPop();
+    });
+    if (c) c.addEventListener("click", closeFavPop);
+  }
+
   function continueKey(item, kind) {
     if (!item) return "";
 
