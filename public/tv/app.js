@@ -3445,6 +3445,14 @@
       if (typing && state.screen === "search") { runSearch(document.activeElement.value); return; }
       if (typing && state.screen === "login" && current && current.tagName === "INPUT") { move("down"); return; }
       e.preventDefault();
+
+      /*
+       * Enquanto o OK original continua segurado, ignora as repetições
+       * do controle. Assim o modal de favoritos permanece aberto até
+       * soltar o botão; só um novo clique confirma a ação.
+       */
+      if (pressCard) return;
+
       /* Cartão de conteúdo: clique curto abre, clique longo mostra favoritos. */
       if (current && current._item && current.classList.contains("card") && !favPopOpen()) {
         if (pressCard) return; /* repetição do OK segurado */
