@@ -1494,7 +1494,7 @@
       (dir === "left" || dir === "right")
     ) {
       var trackItems =
-        $(".focusable", horizontalTrack)
+        $$(".focusable", horizontalTrack)
           .filter(function (el) {
             return (
               el.offsetParent !== null ||
@@ -1542,7 +1542,7 @@
 
       if (rowsHost) {
         var rowTracks =
-          $(".row-track", rowsHost)
+          $$(".row-track", rowsHost)
             .filter(function (track) {
               return (
                 track.offsetParent !== null ||
@@ -1567,7 +1567,7 @@
         }
 
         var targetItems =
-          $(".focusable", rowTracks[targetRowIndex])
+          $$(".focusable", rowTracks[targetRowIndex])
             .filter(function (el) {
               return (
                 el.offsetParent !== null ||
@@ -1638,7 +1638,7 @@
       (dir === "up" || dir === "down")
     ) {
       var gridItems =
-        $(".card.focusable", gridHost)
+        $$(".card.focusable", gridHost)
           .filter(function (el) {
             return (
               el.offsetParent !== null ||
