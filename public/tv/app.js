@@ -1387,6 +1387,8 @@
 
   /* ---------------- Navegação espacial ---------------- */
   function focusables() {
+    var pop = $("#fav-pop");
+    if (pop && pop.classList.contains("show")) return $$(".focusable", pop);
     var scr = $("#screen-" + state.screen);
     if (!scr) return [];
     return $$(".focusable", scr).filter(function (el) {
@@ -1694,7 +1696,24 @@
       el.innerHTML = '<div class="ph"></div>';
       el.firstChild.textContent = name;
     }
-    el.addEventListener("click", function () { openItem(item, kind); });
+    el.addEventListener("click", function () {
+      if (el._suppressClick) { el._suppressClick = false; return; }
+      openItem(item, kind);
+    });
+    /* Toque/clique longo (celular/mouse) abre favoritos. */
+    var holdT = null;
+    var startHold = function () {
+      clearTimeout(holdT);
+      holdT = setTimeout(function () { el._suppressClick = true; openFavPop(item, kind); }, 600);
+    };
+    var endHold = function () { clearTimeout(holdT); };
+    el.addEventListener("touchstart", startHold, { passive: true });
+    el.addEventListener("touchend", endHold);
+    el.addEventListener("touchmove", endHold, { passive: true });
+    el.addEventListener("touchcancel", endHold);
+    el.addEventListener("mousedown", startHold);
+    el.addEventListener("mouseup", endHold);
+    el.addEventListener("mouseleave", endHold);
     el._item = item; el._kind = kind;
     return el;
   }
@@ -1899,6 +1918,89 @@
 
   function setContinue(list) {
     writeHistory("continue", list.slice(0, 30));
+  }
+
+  /* ---------------- Favoritos (por conta, persistente) ---------------- */
+  function getFavorites() {
+    var list = readHistory("favorites", []);
+    return Array.isArray(list) ? list : [];
+  }
+
+  function favKey(item, kind) {
+    if (!item) return "";
+    var k = kind === "resume" ? (item._kind || "movie") : kind;
+    return String(k) + ":" + String(item.series_id || item.stream_id || item.id || item.name || "");
+  }
+
+  function isFavorite(item, kind) {
+    var key = favKey(item, kind);
+    return getFavorites().some(function (f) { return f._favKey === key; });
+  }
+
+  function toggleFavorite(item, kind) {
+    var key = favKey(item, kind);
+    var list = getFavorites();
+    var exists = list.some(function (f) { return f._favKey === key; });
+    if (exists) {
+      list = list.filter(function (f) { return f._favKey !== key; });
+    } else {
+      var rec;
+      try { rec = JSON.parse(JSON.stringify(item)); } catch (e) { return false; }
+      rec._favKey = key;
+      rec._kind = kind === "resume" ? (item._kind || "movie") : kind;
+      list.unshift(rec);
+    }
+    writeHistory("favorites", list.slice(0, 500));
+    refreshGridCats();
+    return !exists;
+  }
+
+  function favoritesOf(kind) {
+    return getFavorites().filter(function (f) { return f._kind === kind; });
+  }
+
+  /* Popup de favoritos (clique longo no cartão) */
+  var favPopItem = null, favPopKind = null;
+
+  function favPopOpen() {
+    var p = $("#fav-pop");
+    return !!(p && p.classList.contains("show"));
+  }
+
+  function openFavPop(item, kind) {
+    var p = $("#fav-pop");
+    if (!p || !item) return;
+    favPopItem = item; favPopKind = kind;
+    $("#fav-title").textContent = item.name || item.title || "";
+    $("#fav-toggle").textContent = isFavorite(item, kind) ? "Remover dos favoritos" : "Adicionar aos favoritos";
+    p._prevFocus = current;
+    p.classList.add("show");
+    setTimeout(function () { setFocus($("#fav-toggle")); }, 20);
+  }
+
+  function closeFavPop() {
+    var p = $("#fav-pop");
+    if (!p) return;
+    p.classList.remove("show");
+    var prev = p._prevFocus;
+    p._prevFocus = null;
+    favPopItem = null; favPopKind = null;
+    setTimeout(function () {
+      var list = focusables();
+      if (prev && list.indexOf(prev) !== -1) setFocus(prev);
+      else if (list[0]) setFocus(list[0]);
+    }, 20);
+  }
+
+  function bindFavPop() {
+    var t = $("#fav-toggle"), c = $("#fav-cancel");
+    if (t) t.addEventListener("click", function () {
+      if (!favPopItem) { closeFavPop(); return; }
+      var added = toggleFavorite(favPopItem, favPopKind);
+      toast(added ? "Adicionado aos favoritos" : "Removido dos favoritos");
+      closeFavPop();
+    });
+    if (c) c.addEventListener("click", closeFavPop);
   }
 
   function continueKey(item, kind) {
@@ -2360,6 +2462,33 @@
   }
 
 
+  /* Atualiza em silêncio "Continuar assistindo" e "Favoritos" na lateral
+     da categoria aberta, sem trocar a categoria nem o foco. */
+  function refreshGridCats() {
+    var kind = state.gridKind;
+    var catBox = $("#cat-list");
+    if (!kind || !catBox) return;
+    $$("#cat-list .cat").forEach(function (b) {
+      var c = b._cat;
+      if (!c) return;
+      var id = String(c.category_id);
+      if (id === "__cont") {
+        c._items = getContinue()
+          .filter(function (i) { return i._kind === kind; })
+          .map(function (i) { return continueDisplayItem(i, kind); });
+      } else if (id === "__fav") {
+        c._items = favoritesOf(kind);
+      } else {
+        return;
+      }
+      var k = b.querySelector(".cat-count");
+      if (k) k.textContent = c._items.length;
+      if (b.classList.contains("active") && state.screen !== "player") {
+        renderGrid($("#grid-items"), c._items, id === "__cont" ? "resume" : kind);
+      }
+    });
+  }
+
   function openGrid(kind, startCat) {
     state.gridKind = kind;
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
@@ -2395,6 +2524,7 @@
       cats.push({ category_id: "__cont", category_name: "Continuar assistindo", _items: cont });
       cats.push({ category_id: "__recent", category_name: "Recentes adicionados", _items: recentlyAdded(data.items, 100) });
     }
+    cats.push({ category_id: "__fav", category_name: "Favoritos", _items: favoritesOf(kind) });
     cats.push({ category_id: "__all", category_name: "Todos", _items: data.items });
     data.cats.forEach(function (c) {
       cats.push({ category_id: c.category_id, category_name: c.category_name, _items: byCategory(data.items, c.category_id) });
@@ -2404,6 +2534,7 @@
     cats.forEach(function (c) {
       var b = document.createElement("button");
       b.className = "cat focusable";
+      b._cat = c;
       var n = document.createElement("span"); n.className = "cat-name"; n.textContent = c.category_name;
       var k = document.createElement("span"); k.className = "cat-count"; k.textContent = c._items.length;
       b.appendChild(n); b.appendChild(k);
@@ -3118,16 +3249,10 @@
     destroyPlayer();
     state._changingMedia = false;
 
-    if (hadProgress && (wasKind === "movie" || wasKind === "series")) {
-      /* Parou no meio: volta para Continuar assistindo da própria categoria. */
-      state.playerOrigin = null;
-      state.playing = null;
-      state.detail = null;
-      state.detailOrigin = null;
-      state.prevGrid = "grid";
-      openGrid(wasKind, "__cont");
-      return;
-    }
+    /* O conteúdo entra em "Continuar assistindo" em silêncio:
+       a tela volta exatamente para onde estava, sem abrir essa categoria. */
+    refreshGridCats();
+
 
     state.playerOrigin = null;
     state.playing = null;
@@ -3236,6 +3361,17 @@
     PLAY: 415, PAUSE: 19, STOP: 413, FF: 417, RW: 412, PLAYPAUSE: 179
   };
 
+  var pressCard = null, pressTimer = null, pressLong = false;
+
+  function onKeyUp(e) {
+    if (e.keyCode !== KEY.ENTER || !pressCard) return;
+    var card = pressCard;
+    pressCard = null;
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    if (!pressLong && !state.accessLocked && state.screen !== "player") card.click();
+    pressLong = false;
+  }
+
   function onKey(e) {
     var k = e.keyCode;
     var typing = document.activeElement && document.activeElement.tagName === "INPUT";
@@ -3274,9 +3410,20 @@
       if (typing && state.screen === "search") { runSearch(document.activeElement.value); return; }
       if (typing && state.screen === "login" && current && current.tagName === "INPUT") { move("down"); return; }
       e.preventDefault();
+      /* Cartão de conteúdo: clique curto abre, clique longo mostra favoritos. */
+      if (current && current._item && current.classList.contains("card") && !favPopOpen()) {
+        if (pressCard) return; /* repetição do OK segurado */
+        pressCard = current; pressLong = false;
+        pressTimer = setTimeout(function () {
+          pressLong = true;
+          openFavPop(pressCard._item, pressCard._kind);
+        }, 650);
+        return;
+      }
       if (current) current.click();
       return;
     }
+
 
     if (k === KEY.LEFT || k === KEY.RIGHT) {
       if (typing) return; // deixa mover o cursor dentro do campo
@@ -3293,6 +3440,7 @@
   }
 
   function goBack() {
+    if (favPopOpen()) { closeFavPop(); return; }
     if (state.screen === "menu") {
       if (window.AndroidTV && window.AndroidTV.exit) window.AndroidTV.exit();
       else if (window.webOS && window.webOS.platformBack) window.webOS.platformBack();
@@ -3451,6 +3599,7 @@
     }
 
     bindMenu();
+    bindFavPop();
     var listsAdd = $("#lists-add");
     if (listsAdd) {
       listsAdd.addEventListener("click", function () {
@@ -3522,6 +3671,7 @@
     });
 
     document.addEventListener("keydown", onKey, true);
+    document.addEventListener("keyup", onKeyUp, true);
     document.addEventListener("mousemove", function () {}, false);
 
     // Sessão salva
