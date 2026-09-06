@@ -1474,18 +1474,14 @@
     }
 
     /*
-     * ERICKTV_SEASON_FOCUS_LOCK_V82
+     * ERICKTV_SEASON_FOCUS_LOCK_V83
      *
-     * Mesma lógica já usada na barra de episódios:
-     * - ◀/▶ navegam livremente por TODAS as temporadas;
-     * - ◀ na primeira permanece na primeira;
-     * - ▶ na última permanece na última;
-     * - o foco nunca escapa da barra pelas laterais;
-     * - ▲/▼ continuam livres para sair da barra.
-     *
-     * Importante: aqui precisa ser $ (querySelectorAll).
-     * Com $ era retornado apenas um botão e .filter() quebrava
-     * a navegação, fazendo parecer que a temporada estava travada.
+     * Barra de temporadas:
+     * - ◀/▶ percorrem TODAS as temporadas;
+     * - ao mover, a temporada focada já vira a temporada ativa;
+     * - ◀ na primeira e ▶ na última ficam no próprio botão;
+     * - a barra nunca é abandonada pelas setas laterais;
+     * - somente ▲/▼ podem sair da barra de temporadas.
      */
     var seasonsHost =
       current.closest &&
@@ -1497,6 +1493,11 @@
       current.classList.contains("season") &&
       (dir === "left" || dir === "right")
     ) {
+      /*
+       * $ = querySelectorAll em array.
+       * O código anterior usava $ (querySelector) e depois .filter(),
+       * o que quebrava a navegação já na Temporada 1.
+       */
       var seasonItems =
         $(".season.focusable", seasonsHost)
           .filter(function (el) {
@@ -1521,15 +1522,23 @@
         nextSeasonPos >= 0 &&
         nextSeasonPos < seasonItems.length
       ) {
-        setFocus(
-          seasonItems[nextSeasonPos]
-        );
+        var nextSeason =
+          seasonItems[nextSeasonPos];
+
+        setFocus(nextSeason);
+
+        /*
+         * A seta lateral já troca a temporada, sem precisar
+         * apertar OK depois. O click chama selectSeason().
+         */
+        if (
+          typeof nextSeason.click ===
+          "function"
+        ) {
+          nextSeason.click();
+        }
       }
 
-      /*
-       * No limite não fazemos nada além de retornar:
-       * o foco continua exatamente na primeira/última temporada.
-       */
       return;
     }
 
