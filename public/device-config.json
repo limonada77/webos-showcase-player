@@ -124,11 +124,11 @@
     },
     {
       "hash": "574f312c334e3fa873c84f30490eac3311d04a7fed65d8dbca0f32bbda361be1",
-      "active": true,
-      "duration": "forever",
-      "expiresAt": null,
-      "source": "admin",
-      "updatedAt": 1788653174528,
+      "active": false,
+      "duration": "block",
+      "expiresAt": "2026-09-06T18:00:05.766Z",
+      "source": "admin-block",
+      "updatedAt": 1788717606369,
       "xtream_enc": "v1.w7FNFSYM3CXpAPJV.MDHRc3HIhzefCq0pK4jiCd\/O1UAKL8NdoUmaXlT0QCGTdUYJpo5GZy0Ki0d0XDkQM0OeJdh6+hSExkv5f5iYVNUyISXgDgS4HtO8eJDLjvfNuQk5t31E433Fa5\/ch6tQwfN+6ws="
     },
     {
@@ -248,5 +248,5 @@
       "xtream_enc": "v1.G\/7ZT8+8Q+OvKGgG.QxuNuXNxWWZ1Bbv9WiFZ3ksFMTX477HaZnn7C10zvClYJRYDAVZ+PXFagPjIj2HNG5vbyNZG3o5X5fInylMwBQ9E5f+gM8EX98uO03UDxqaoRxzweEEBEVGbzB7g+rFZDBzriYw="
     }
   ],
-  "updatedAt": 1788716220523
+  "updatedAt": 1788717606369
 }
