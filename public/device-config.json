@@ -255,7 +255,16 @@
       "source": "admin",
       "updatedAt": 1788725720884,
       "xtream_enc": "v1.pLfIwx6qWqqwBr3i.+NOg+UgsuheQ9dWet\/94YzCTfUxQDSwyNXyabbF3qQ\/eMTOMGr6JCmajgUXpmOZrNAw0ma9JyKh2OtEfN+oJ+0jWQKy4JWLBvNAK6KD7o6UMEgWkGcw9i9uQ8fpzZ0y1+B5UIgk="
+    },
+    {
+      "hash": "e7fcde7348d74de3cf3a6c22bb710561287e8b775bfac36f420cda7245ca8bad",
+      "active": true,
+      "duration": "forever",
+      "expiresAt": null,
+      "source": "admin",
+      "updatedAt": 1788726660249,
+      "xtream_enc": "v1.MZcnXlsLEnIp6TSi.byx6woDF6y5Lu3BA7+N0\/umWCb9xF01ZB7n2BhArw6JSGd80Nsgkprqy4Ab4yhoqZti\/1qJaBjPoH\/+soj9pQ3l0KlNtMBQZZ8VE4pBCCg6tBeJ0XZ2KdwbqNBLS+6nKmG64oo4="
     }
   ],
-  "updatedAt": 1788725720884
+  "updatedAt": 1788726660249
 }
