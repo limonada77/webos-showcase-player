@@ -21,9 +21,9 @@
         "rootRequired": false,
         "ipkUrl": "https://raw.githubusercontent.com/limonada77/webos-showcase-player/main/public/downloads/com.streamtv.app_1.0.0_all.ipk",
         "ipkHash": {
-          "sha256": "ff92b3fd2c586a671016f26c973b303775682581afe1d96f8a250190178cfa07"
+          "sha256": "506f01ec68cead3ceffa8236722efad799a683b56d5128b48c86ed264e876eb0"
         },
-        "ipkSize": 1540620
+        "ipkSize": 1540698
       },
       "pool": "main",
       "shortDescription": "StreamTV para LG webOS"
