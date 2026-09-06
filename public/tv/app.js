@@ -1474,6 +1474,57 @@
     }
 
     /*
+     * ERICKTV_SEASON_FOCUS_LOCK_V80
+     *
+     * Na faixa de temporadas, ◀/▶ só navegam entre temporadas.
+     * - ◀ na primeira temporada permanece na primeira;
+     * - ▶ na última temporada permanece na última;
+     * - o foco nunca escapa para outro controle com ◀/▶;
+     * - ▲/▼ continuam livres para sair da faixa de temporadas.
+     */
+    var seasonsHost =
+      current.closest &&
+      current.closest("#dt-seasons");
+
+    if (
+      seasonsHost &&
+      current.classList &&
+      current.classList.contains("season") &&
+      (dir === "left" || dir === "right")
+    ) {
+      var seasonItems =
+        $(".season.focusable", seasonsHost)
+          .filter(function (el) {
+            return (
+              el.offsetParent !== null ||
+              el.offsetWidth > 0
+            );
+          });
+
+      var seasonPos =
+        seasonItems.indexOf(current);
+
+      if (seasonPos < 0) {
+        return;
+      }
+
+      var nextSeasonPos =
+        seasonPos +
+        (dir === "right" ? 1 : -1);
+
+      if (
+        nextSeasonPos >= 0 &&
+        nextSeasonPos < seasonItems.length
+      ) {
+        setFocus(
+          seasonItems[nextSeasonPos]
+        );
+      }
+
+      return;
+    }
+
+    /*
      * ERICKTV_EDGE_TRAP_V79
      *
      * Trilhas horizontais:
