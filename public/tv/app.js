@@ -2443,6 +2443,33 @@
   }
 
 
+  /* Atualiza em silêncio "Continuar assistindo" e "Favoritos" na lateral
+     da categoria aberta, sem trocar a categoria nem o foco. */
+  function refreshGridCats() {
+    var kind = state.gridKind;
+    var catBox = $("#cat-list");
+    if (!kind || !catBox) return;
+    $$("#cat-list .cat").forEach(function (b) {
+      var c = b._cat;
+      if (!c) return;
+      var id = String(c.category_id);
+      if (id === "__cont") {
+        c._items = getContinue()
+          .filter(function (i) { return i._kind === kind; })
+          .map(function (i) { return continueDisplayItem(i, kind); });
+      } else if (id === "__fav") {
+        c._items = favoritesOf(kind);
+      } else {
+        return;
+      }
+      var k = b.querySelector(".cat-count");
+      if (k) k.textContent = c._items.length;
+      if (b.classList.contains("active") && state.screen !== "player") {
+        renderGrid($("#grid-items"), c._items, id === "__cont" ? "resume" : kind);
+      }
+    });
+  }
+
   function openGrid(kind, startCat) {
     state.gridKind = kind;
     var data = state[kind === "movie" ? "movies" : kind === "series" ? "series" : "live"];
