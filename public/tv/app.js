@@ -1474,13 +1474,18 @@
     }
 
     /*
-     * ERICKTV_SEASON_FOCUS_LOCK_V81
+     * ERICKTV_SEASON_FOCUS_LOCK_V82
      *
-     * Na faixa de temporadas, ◀/▶ só navegam entre temporadas.
-     * - ◀ na primeira temporada permanece na primeira;
-     * - ▶ na última temporada permanece na última;
-     * - o foco nunca escapa para outro controle com ◀/▶;
-     * - ▲/▼ continuam livres para sair da faixa de temporadas.
+     * Mesma lógica já usada na barra de episódios:
+     * - ◀/▶ navegam livremente por TODAS as temporadas;
+     * - ◀ na primeira permanece na primeira;
+     * - ▶ na última permanece na última;
+     * - o foco nunca escapa da barra pelas laterais;
+     * - ▲/▼ continuam livres para sair da barra.
+     *
+     * Importante: aqui precisa ser $ (querySelectorAll).
+     * Com $ era retornado apenas um botão e .filter() quebrava
+     * a navegação, fazendo parecer que a temporada estava travada.
      */
     var seasonsHost =
       current.closest &&
@@ -1521,6 +1526,10 @@
         );
       }
 
+      /*
+       * No limite não fazemos nada além de retornar:
+       * o foco continua exatamente na primeira/última temporada.
+       */
       return;
     }
 
