@@ -8,8 +8,36 @@
   </head>
   <body>
     <div id="app">
+      <div id="access-gate" class="access-gate">
+        <div class="access-modal">
+          <div class="access-brand">Stream<span>TV</span></div>
+          <div class="access-title">Liberação de acesso</div>
+          <div class="access-price">R$ 25,00</div>
+
+          <img
+            id="access-qr"
+            class="access-qr"
+            alt="QR Code PIX"
+            style="display:none"
+          />
+
+          <div class="access-label">Pagamento PIX automático</div>
+          <div id="access-payment-status" class="access-payment-status">
+            Preparando cobrança de R$ 25,00...
+          </div>
+
+          <div class="access-device-box">
+            <div class="access-label">MAC / ID do dispositivo</div>
+            <div id="access-device-id" class="access-device-id">Gerando...</div>
+          </div>
+
+          <div id="access-status" class="access-status">
+            Aguardando liberação...
+          </div>
+        </div>
+      </div>
       <!-- LOGIN -->
-      <section id="screen-login" class="screen active">
+      <section id="screen-login" class="screen">
         <div class="login-bg"></div>
         <div class="login-card">
           <div class="brand">Dark<span>TV</span></div>
@@ -32,7 +60,7 @@
       </section>
 
       <!-- MENU PRINCIPAL (launcher) -->
-      <section id="screen-menu" class="screen">
+      <section id="screen-menu" class="screen active">
         <div class="menu-bg"></div>
         <header class="menu-top">
           <div class="brand small">Dark<span>TV</span></div>
@@ -149,7 +177,7 @@
           <div class="grid-title">Buscar</div>
         </header>
         <div class="search-box">
-          <input id="search-input" class="focusable" type="text" placeholder="Digite o nome do filme, série ou canal" />
+          <input id="search-input" class="focusable" type="text" name="stv-q-nohist" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Digite o nome do filme, série ou canal" />
         </div>
         <div id="search-results" class="grid"></div>
       </section>
@@ -173,10 +201,10 @@
             <div class="pf-row"><span>Conexões</span><b id="pf-conn">—</b></div>
             <div class="pf-row"><span>Servidor</span><b id="pf-host">—</b></div>
             <div class="pf-actions">
-              <button id="pf-clear" class="btn ghost focusable" type="button">Limpar histórico de filmes assistidos</button>
+              <button id="pf-clear" class="btn ghost focusable" type="button">Limpar histórico</button>
               <button id="pf-logout" class="btn ghost focusable" type="button">Sair da conta</button>
             </div>
-            <div class="pf-note">O histórico é guardado apenas durante esta sessão. Ao sair e entrar novamente, ele começa vazio.</div>
+            <div class="pf-note">O histórico fica salvo nesta TV e continua disponível após fechar e abrir o aplicativo.</div>
           </div>
         </div>
       </section>
@@ -223,7 +251,7 @@
               <button id="osd-next-ep" class="osd-btn" type="button">Pular episódio</button>
               <button id="osd-aspect" class="osd-btn" type="button">Ajustar imagem</button>
             </div>
-            <div class="osd-hint">OK: pausar · ◀ ▶: 10s · ▲ ▼: escolher botão · VOLTAR: sair</div>
+            <div class="osd-hint">OK: pausar · ◀ ▶: 10s · ▼: botões (◀ ▶ para trocar) · VOLTAR: sair</div>
           </div>
         </div>
         <div id="player-spinner" class="spinner"></div>
@@ -233,16 +261,23 @@
       <div id="toast" class="toast"></div>
     </div>
 
+    <div id="fav-pop" class="fav-pop" aria-hidden="true">
+      <div class="fav-box">
+        <div class="fav-label">Favoritos</div>
+        <div id="fav-title" class="fav-title"></div>
+        <button id="fav-toggle" class="btn primary focusable" type="button">Adicionar aos favoritos</button>
+        <button id="fav-cancel" class="btn ghost focusable" type="button">Cancelar</button>
+      </div>
+    </div>
+
     <script>
-      /* Evita o "flash" da tela de login quando já existe conta salva. */
+      /* ERICKTV_HOME_FIRST_V74: o launcher é sempre a primeira e única Home. */
       (function () {
         try {
-          if (window.localStorage.getItem("stv_profile")) {
-            var l = document.getElementById("screen-login");
-            var h = document.getElementById("screen-menu");
-            if (l) l.className = l.className.replace(" active", "");
-            if (h && h.className.indexOf("active") === -1) h.className += " active";
-          }
+          var l = document.getElementById("screen-login");
+          var h = document.getElementById("screen-menu");
+          if (l) l.className = l.className.replace(" active", "");
+          if (h && h.className.indexOf("active") === -1) h.className += " active";
         } catch (e) {}
       })();
     </script>
