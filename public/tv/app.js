@@ -3534,6 +3534,7 @@
     }
 
     bindMenu();
+    bindFavPop();
     var listsAdd = $("#lists-add");
     if (listsAdd) {
       listsAdd.addEventListener("click", function () {
