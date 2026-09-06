@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -95,26 +96,92 @@ public class MainActivity extends Activity {
     }
 
     private String resolveDeviceId() {
+        /*
+         * ERICKTV_STABLE_DEVICE_ID_V78
+         *
+         * O ID mostrado pelo DarkTV é gravado na primeira execução
+         * e nunca mais depende do Wi-Fi/Ethernet estar ligado.
+         *
+         * Assim:
+         * - desligar/ligar a internet não troca o MAC/ID;
+         * - reiniciar/desligar a TV Box não troca o MAC/ID;
+         * - atualizar o APK mantém o mesmo MAC/ID;
+         * - o mesmo hash de liberação continua válido.
+         */
+        SharedPreferences prefs =
+            getSharedPreferences(
+                "darktv_identity",
+                MODE_PRIVATE
+            );
+
+        String saved =
+            prefs.getString(
+                "stable_device_id",
+                ""
+            );
+
+        if (
+            saved != null &&
+            saved.matches(
+                "(?i)^[0-9A-F]{2}(:[0-9A-F]{2}){5}$"
+            )
+        ) {
+            return saved.toUpperCase(Locale.US);
+        }
+
+        String discovered =
+            discoverInitialDeviceId();
+
+        prefs.edit()
+            .putString(
+                "stable_device_id",
+                discovered
+            )
+            .apply();
+
+        return discovered;
+    }
+
+    private String discoverInitialDeviceId() {
+        /*
+         * Na primeira execução ainda tentamos aproveitar o MAC real
+         * que a Box expõe. Depois de salvo, ele não é recalculado.
+         */
         try {
             List<NetworkInterface> list =
-                Collections.list(NetworkInterface.getNetworkInterfaces());
+                Collections.list(
+                    NetworkInterface
+                        .getNetworkInterfaces()
+                );
 
             for (NetworkInterface nif : list) {
-                String name = nif.getName();
+                String name =
+                    nif.getName();
 
-                if (!"wlan0".equalsIgnoreCase(name) &&
-                    !"eth0".equalsIgnoreCase(name)) {
+                if (
+                    !"wlan0".equalsIgnoreCase(name) &&
+                    !"eth0".equalsIgnoreCase(name)
+                ) {
                     continue;
                 }
 
-                byte[] mac = nif.getHardwareAddress();
+                byte[] mac =
+                    nif.getHardwareAddress();
 
-                if (mac != null && mac.length >= 6) {
+                if (
+                    mac != null &&
+                    mac.length >= 6
+                ) {
                     return formatDeviceBytes(mac);
                 }
             }
         } catch (Exception ignored) {}
 
+        /*
+         * Se a rede estiver desligada na primeira execução,
+         * deriva um ID estável do ANDROID_ID. Esse valor também
+         * é salvo e continua o mesmo quando a rede voltar.
+         */
         try {
             String androidId =
                 Settings.Secure.getString(
@@ -122,18 +189,31 @@ public class MainActivity extends Activity {
                     Settings.Secure.ANDROID_ID
                 );
 
-            if (androidId == null) {
-                androidId = "darktv-android-tv";
+            if (
+                androidId == null ||
+                androidId.trim().isEmpty()
+            ) {
+                androidId =
+                    "darktv-android-tv";
             }
 
             MessageDigest digest =
-                MessageDigest.getInstance("SHA-256");
+                MessageDigest.getInstance(
+                    "SHA-256"
+                );
 
             byte[] bytes =
-                digest.digest(androidId.getBytes("UTF-8"));
+                digest.digest(
+                    androidId.getBytes(
+                        "UTF-8"
+                    )
+                );
 
             bytes[0] =
-                (byte) ((bytes[0] | 0x02) & 0xFE);
+                (byte) (
+                    (bytes[0] | 0x02) &
+                    0xFE
+                );
 
             return formatDeviceBytes(bytes);
 
