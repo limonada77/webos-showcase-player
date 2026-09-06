@@ -2281,6 +2281,21 @@
 
     if (input) {
       input.value = "";
+
+      /*
+       * ERICKTV_SEARCH_NO_HISTORY_V76
+       * Cada abertura recebe um nome novo para o navegador/WebView
+       * não reapresentar pesquisas anteriores como autocomplete.
+       */
+      input.setAttribute("autocomplete", "off");
+      input.setAttribute("autocorrect", "off");
+      input.setAttribute("autocapitalize", "off");
+      input.setAttribute("spellcheck", "false");
+      input.setAttribute(
+        "name",
+        "stv-q-nohist-" + String(Date.now())
+      );
+
       input.placeholder =
         state.searchKind
           ? "Buscar em " + label.toLowerCase()
@@ -3050,9 +3065,28 @@
      * Não reutiliza detalhe antigo.
      */
     if (state.screen !== "player") {
+      var originScreen = state.screen;
+      var originDetail = state.detail || null;
+
+      /*
+       * ERICKTV_MOVIE_RETURN_GRID_V76
+       * Filme aberto a partir de uma categoria:
+       * o player volta direto para a mesma grade, sem reabrir
+       * Detalhe nem "Continuar assistindo". state.lastFocus.grid
+       * preserva o card que estava selecionado.
+       */
+      if (
+        kind === "movie" &&
+        state.screen === "detail" &&
+        state.detailOrigin === "grid"
+      ) {
+        originScreen = "grid";
+        originDetail = null;
+      }
+
       state.playerOrigin = {
-        screen: state.screen,
-        detail: state.detail || null
+        screen: originScreen,
+        detail: originDetail
       };
     }
 
@@ -3266,6 +3300,7 @@
     if (origin && origin.screen) {
       if (origin.screen === "grid") {
         state.detail = null;
+        state.detailOrigin = null;
         show("grid");
         return;
       }
