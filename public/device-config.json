@@ -304,12 +304,12 @@
     {
       "hash": "d1706ce06ad07acca39bdd0b491308aae87fb57d0fd365dff32175bab6c0522b",
       "active": true,
-      "duration": "hours4",
-      "expiresAt": "2026-09-07T02:43:08.328Z",
+      "duration": "forever",
+      "expiresAt": null,
       "source": "admin",
-      "updatedAt": 1788734588845,
-      "xtream_enc": "v1.wHwihOmdcRqNoc5H.dA82vifLsEAVgkOjJvnZtMy3oVpJMgSvRT\/GeTusDEkDlMrBAiLrmDaoNpx6bknhh1nbvkgfM9qynJbLYX9f1Ws80W11U83MgQqbY\/RMFyAncNA="
+      "updatedAt": 1788734603851,
+      "xtream_enc": "v1.dZdsrxC6q7Fu\/1uC.mGpqednek8vyta07ZQKydCxcGW2DNNklzuUKAzOBI9lcpbI9\/IoQPuT1rE88LOu4Hg57l4BafYlCrpRw\/fIiG8BGW7VY1N61oo+xeWdi8Ypr2NQ="
     }
   ],
-  "updatedAt": 1788734588845
+  "updatedAt": 1788734603851
 }
