@@ -1474,7 +1474,7 @@
     }
 
     /*
-     * ERICKTV_SEASON_FOCUS_LOCK_V80
+     * ERICKTV_SEASON_FOCUS_LOCK_V81
      *
      * Na faixa de temporadas, ◀/▶ só navegam entre temporadas.
      * - ◀ na primeira temporada permanece na primeira;
