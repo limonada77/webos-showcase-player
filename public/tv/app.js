@@ -3605,6 +3605,7 @@
     });
 
     document.addEventListener("keydown", onKey, true);
+    document.addEventListener("keyup", onKeyUp, true);
     document.addEventListener("mousemove", function () {}, false);
 
     // Sessão salva
