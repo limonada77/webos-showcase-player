@@ -41,6 +41,10 @@
   var PIX_STATUS_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-status";
 
+  /* DARKTV_PIX_DIRECT_ASAAS_V1
+   * Este endpoint agora retorna QR PIX direto da Asaas,
+   * sem abrir página de checkout.
+   */
   var PIX_CHECKOUT_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-checkout";
 
