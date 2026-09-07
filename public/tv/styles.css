@@ -281,7 +281,7 @@ input.focused { border-color: #fff; background: #2a2a30; }
   justify-content: start;
   align-content: start;
   column-gap: 44px;
-  row-gap: 104px;
+  row-gap: 44px;
 }
 
 #screen-grid .grid .card,
