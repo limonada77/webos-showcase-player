@@ -17,7 +17,6 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -44,13 +43,8 @@ public class MainActivity extends Activity {
     private static final String ACCESS_URL =
         "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/grant-access";
 
-    private static final String OWNER = "limonada77";
-    private static final String REPO = "webos-showcase-player";
-    private static final String CONFIG_PATH = "public/device-config.json";
-    private static final String BRANCH = "main";
-
     /*
-     * A lista Xtream não é publicada em texto puro no repositório.
+     * A lista Xtream é enviada cifrada ao Supabase.
      * O app da TV e o Admin compartilham esta chave apenas para
      * transportar a configuração cifrada.
      */
@@ -62,7 +56,6 @@ public class MainActivity extends Activity {
     private EditText userInput;
     private EditText passInput;
     private EditText adminKeyInput;
-    private EditText githubTokenInput;
     private Spinner durationSpinner;
     private TextView status;
 
@@ -121,8 +114,6 @@ public class MainActivity extends Activity {
         );
 
         String[] durations = new String[] {
-            "4 horas",
-            "1 dia",
             "1 mês",
             "1 ano",
             "Para sempre",
@@ -226,7 +217,7 @@ public class MainActivity extends Activity {
         root.addView(settingsTitle);
 
         TextView settingsHelp = text(
-            "A Chave Admin libera no Supabase. O token GitHub grava duração e lista remota. Ambos ficam salvos somente neste celular.",
+            "A Chave Admin envia acesso, prazo e lista direto para o Supabase. Não precisa mais de token GitHub.",
             13,
             false
         );
@@ -239,26 +230,14 @@ public class MainActivity extends Activity {
             PasswordTransformationMethod.getInstance()
         );
 
-        githubTokenInput = field("Token GitHub");
-        githubTokenInput.setTransformationMethod(
-            PasswordTransformationMethod.getInstance()
-        );
-
         String savedAdminKey =
             getSharedPreferences("admin", MODE_PRIVATE)
                 .getString("darktv_admin_key", "");
 
-        String savedGithubToken =
-            getSharedPreferences("admin", MODE_PRIVATE)
-                .getString("github_token_v2", "");
-
         adminKeyInput.setText(savedAdminKey);
-        githubTokenInput.setText(savedGithubToken);
-
         root.addView(adminKeyInput);
-        root.addView(githubTokenInput);
 
-        Button save = button("SALVAR CHAVES");
+        Button save = button("SALVAR CHAVE");
         save.setOnClickListener(v -> {
             getSharedPreferences("admin", MODE_PRIVATE)
                 .edit()
@@ -266,13 +245,9 @@ public class MainActivity extends Activity {
                     "darktv_admin_key",
                     adminKeyInput.getText().toString().trim()
                 )
-                .putString(
-                    "github_token_v2",
-                    githubTokenInput.getText().toString().trim()
-                )
                 .apply();
 
-            status.setText("Chaves salvas neste celular.");
+            status.setText("Chave salva neste celular.");
             status.setTextColor(Color.rgb(134, 239, 172));
         });
         root.addView(save);
@@ -280,114 +255,93 @@ public class MainActivity extends Activity {
         setContentView(scroll);
     }
 
-    private void grantAccess() {
-        final String device =
-            normalizeDeviceId(deviceInput.getText().toString());
+    private void updateAccessBackend(
+        String adminKey,
+        String deviceHash,
+        boolean active,
+        String duration,
+        String encryptedXtream
+    ) throws Exception {
 
-        final String adminKey =
-            adminKeyInput.getText().toString().trim();
+        HttpURLConnection c =
+            (HttpURLConnection)
+                new URL(ACCESS_URL)
+                    .openConnection();
 
-        final String githubToken =
-            githubTokenInput.getText().toString().trim();
+        c.setRequestMethod("POST");
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(20000);
+        c.setDoOutput(true);
 
-        final String host =
-            normalizeHost(hostInput.getText().toString());
+        c.setRequestProperty(
+            "Content-Type",
+            "application/json; charset=utf-8"
+        );
 
-        final String user =
-            userInput.getText().toString().trim();
+        c.setRequestProperty(
+            "x-admin-key",
+            adminKey
+        );
 
-        final String pass =
-            passInput.getText().toString().trim();
+        JSONObject payload =
+            new JSONObject();
 
-        if (device.isEmpty()) {
-            fail("Digite o MAC / ID da TV.");
-            return;
-        }
+        payload.put(
+            "device_hash",
+            deviceHash
+        );
 
-        if (device.replace(":", "").length() != 12) {
-            fail("MAC / ID incompleto. Digite os 12 caracteres.");
-            return;
-        }
+        payload.put(
+            "active",
+            active
+        );
 
-        if (adminKey.isEmpty()) {
-            fail("Salve primeiro a Chave Admin.");
-            return;
-        }
-
-        if (githubToken.isEmpty()) {
-            fail("Informe o token GitHub para gravar duração/lista.");
-            return;
-        }
-
-        final String duration = selectedDuration();
-        final boolean blocking =
-            "block".equals(duration);
-
-        final String expiresAt =
-            calculateExpiresAt(duration);
-
-        boolean hasAnyListField =
-            !host.isEmpty() || !user.isEmpty() || !pass.isEmpty();
+        payload.put(
+            "duration",
+            active
+                ? duration
+                : "block"
+        );
 
         if (
-            !blocking &&
-            hasAnyListField &&
-            (host.isEmpty() || user.isEmpty() || pass.isEmpty())
+            active &&
+            encryptedXtream != null &&
+            !encryptedXtream.isEmpty()
         ) {
-            fail("Para enviar a lista, preencha servidor, usuário e senha.");
-            return;
+            payload.put(
+                "xtream_enc",
+                encryptedXtream
+            );
         }
 
-        status.setText(
-            blocking
-                ? "Bloqueando acesso..."
-                : "Gravando configuração..."
-        );
-        status.setTextColor(Color.rgb(250, 204, 21));
+        try (OutputStream out =
+            c.getOutputStream()) {
 
-        new Thread(() -> {
-            try {
-                String hash = sha256(device);
+            out.write(
+                payload.toString()
+                    .getBytes(StandardCharsets.UTF_8)
+            );
+        }
 
-                String encryptedXtream = null;
+        int code =
+            c.getResponseCode();
 
-                if (!blocking && hasAnyListField) {
-                    JSONObject xtream = new JSONObject();
-                    xtream.put("host", host);
-                    xtream.put("user", user);
-                    xtream.put("pass", pass);
+        if (code != 200) {
+            String body =
+                readBody(c);
 
-                    encryptedXtream =
-                        encryptConfig(xtream.toString());
-                }
-
-                updateDeviceConfig(
-                    githubToken,
-                    hash,
-                    duration,
-                    expiresAt,
-                    encryptedXtream,
-                    !blocking
+            if (code == 401) {
+                throw new Exception(
+                    "Chave Admin inválida."
                 );
+            }
 
-                if (blocking) {
-                    updateAccessBackend(
-                        adminKey,
-                        hash,
-                        false,
-                        expiresAt
-                    );
-
-                    runOnUiThread(() -> {
-                        status.setText(
-                            "Acesso bloqueado para " +
-                            device +
-                            ". O modal PIX continuará aparecendo."
-                        );
-                        status.setTextColor(
-                            Color.rgb(248, 113, 113)
-                        );
-                    });
+            throw new Exception(
+                "Backend HTTP " +
+                code + ": " + body
+            );
+        }
+    });
 
                     return;
                 }
@@ -401,7 +355,8 @@ public class MainActivity extends Activity {
                     adminKey,
                     hash,
                     false,
-                    expiresAt
+                    "block",
+                    null
                 );
 
                 try {
@@ -412,7 +367,8 @@ public class MainActivity extends Activity {
                     adminKey,
                     hash,
                     true,
-                    expiresAt
+                    duration,
+                    encryptedXtream
                 );
 
                 final String expiryLabel =
@@ -524,187 +480,7 @@ public class MainActivity extends Activity {
         return host;
     }
 
-    private void updateDeviceConfig(
-        String token,
-        String deviceHash,
-        String duration,
-        String expiresAt,
-        String encryptedXtream,
-        boolean active
-    ) throws Exception {
 
-        String api =
-            "https://api.github.com/repos/" +
-            OWNER + "/" + REPO +
-            "/contents/" + CONFIG_PATH +
-            "?ref=" + BRANCH;
-
-        HttpURLConnection get =
-            openGitHub(api, "GET", token);
-
-        int getCode = get.getResponseCode();
-
-        JSONObject data;
-        String fileSha = null;
-
-        if (getCode == 200) {
-            JSONObject file =
-                new JSONObject(readBody(get));
-
-            fileSha = file.getString("sha");
-
-            String encoded =
-                file.getString("content")
-                    .replace("\n", "");
-
-            String decoded =
-                new String(
-                    Base64.decode(
-                        encoded,
-                        Base64.DEFAULT
-                    ),
-                    StandardCharsets.UTF_8
-                );
-
-            data = new JSONObject(decoded);
-        } else if (getCode == 404) {
-            data = new JSONObject();
-            data.put("version", 2);
-            data.put("devices", new JSONArray());
-        } else {
-            throw new Exception(
-                "GitHub GET HTTP " +
-                getCode + ": " + readBody(get)
-            );
-        }
-
-        JSONArray devices =
-            data.optJSONArray("devices");
-
-        if (devices == null) {
-            devices = new JSONArray();
-        }
-
-        JSONObject existing = null;
-        int existingIndex = -1;
-
-        for (int i = 0; i < devices.length(); i++) {
-            JSONObject item =
-                devices.optJSONObject(i);
-
-            if (
-                item != null &&
-                deviceHash.equalsIgnoreCase(
-                    item.optString("hash")
-                )
-            ) {
-                existing = item;
-                existingIndex = i;
-                break;
-            }
-        }
-
-        JSONObject item =
-            existing != null
-                ? existing
-                : new JSONObject();
-
-        item.put("hash", deviceHash);
-        item.put("active", active);
-        item.put("duration", duration);
-        item.put(
-            "expiresAt",
-            expiresAt == null
-                ? JSONObject.NULL
-                : expiresAt
-        );
-        item.put(
-            "source",
-            active
-                ? "admin"
-                : "admin-block"
-        );
-        item.put(
-            "updatedAt",
-            System.currentTimeMillis()
-        );
-
-        if (encryptedXtream != null) {
-            item.put("xtream_enc", encryptedXtream);
-        }
-
-        if (existingIndex < 0) {
-            devices.put(item);
-        }
-
-        data.put("version", 2);
-        data.put("devices", devices);
-        data.put(
-            "updatedAt",
-            System.currentTimeMillis()
-        );
-
-        JSONObject payload = new JSONObject();
-        payload.put(
-            "message",
-            "Atualizar acesso remoto DarkTV"
-        );
-        payload.put(
-            "content",
-            Base64.encodeToString(
-                data.toString(2)
-                    .getBytes(StandardCharsets.UTF_8),
-                Base64.NO_WRAP
-            )
-        );
-        payload.put("branch", BRANCH);
-
-        if (fileSha != null) {
-            payload.put("sha", fileSha);
-        }
-
-        String putApi =
-            "https://api.github.com/repos/" +
-            OWNER + "/" + REPO +
-            "/contents/" + CONFIG_PATH;
-
-        HttpURLConnection put =
-            openGitHub(
-                putApi,
-                "PUT",
-                token
-            );
-
-        put.setDoOutput(true);
-        put.setRequestProperty(
-            "Content-Type",
-            "application/json; charset=utf-8"
-        );
-
-        try (OutputStream out =
-            put.getOutputStream()) {
-
-            out.write(
-                payload.toString()
-                    .getBytes(StandardCharsets.UTF_8)
-            );
-        }
-
-        int putCode = put.getResponseCode();
-
-        if (putCode != 200 && putCode != 201) {
-            if (putCode == 403) {
-                throw new Exception(
-                    "Token GitHub sem Contents: Read and write."
-                );
-            }
-
-            throw new Exception(
-                "GitHub PUT HTTP " +
-                putCode + ": " + readBody(put)
-            );
-        }
-    }
 
     private String encryptConfig(String plain)
         throws Exception {
@@ -829,43 +605,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private HttpURLConnection openGitHub(
-        String url,
-        String method,
-        String token
-    ) throws Exception {
 
-        HttpURLConnection c =
-            (HttpURLConnection)
-                new URL(url)
-                    .openConnection();
-
-        c.setRequestMethod(method);
-        c.setConnectTimeout(15000);
-        c.setReadTimeout(20000);
-
-        c.setRequestProperty(
-            "Accept",
-            "application/vnd.github+json"
-        );
-
-        c.setRequestProperty(
-            "Authorization",
-            "Bearer " + token
-        );
-
-        c.setRequestProperty(
-            "X-GitHub-Api-Version",
-            "2022-11-28"
-        );
-
-        c.setRequestProperty(
-            "User-Agent",
-            "DarkTV-Admin"
-        );
-
-        return c;
-    }
 
     private String readBody(
         HttpURLConnection c
