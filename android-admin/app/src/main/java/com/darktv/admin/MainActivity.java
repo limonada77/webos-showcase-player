@@ -43,11 +43,6 @@ public class MainActivity extends Activity {
     private static final String ACCESS_URL =
         "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/grant-access";
 
-    /*
-     * A lista Xtream é enviada cifrada ao Supabase.
-     * O app da TV e o Admin compartilham esta chave apenas para
-     * transportar a configuração cifrada.
-     */
     private static final String CONFIG_KEY_B64 =
         "orcOggT4W+iiKh5m3/MWqYipHn29xcnjgXV7iAdETjY=";
 
@@ -75,7 +70,7 @@ public class MainActivity extends Activity {
         root.addView(title);
 
         TextView sub = text(
-            "Libere o aparelho, escolha o tempo e, se quiser, envie a lista Xtream direto para ele.",
+            "Controle o acesso pelo Supabase e, se quiser, envie a lista Xtream direto para o aparelho.",
             15,
             false
         );
@@ -84,24 +79,6 @@ public class MainActivity extends Activity {
         root.addView(sub);
 
         deviceInput = field("MAC / ID (pode digitar sem :)");
-        deviceInput.setSingleLine(true);
-        /*
-         * Entrada crua e estável: o app não reinicia a conexão com o IME
-         * nem reescreve o texto enquanto o usuário está digitando.
-         * O MAC é normalizado somente quando LIBERAR ACESSO é pressionado.
-         */
-        deviceInput.setRawInputType(
-            InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD |
-            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-        );
-        deviceInput.setImeOptions(
-            EditorInfo.IME_ACTION_NEXT |
-            EditorInfo.IME_FLAG_NO_EXTRACT_UI |
-            EditorInfo.IME_FLAG_NO_FULLSCREEN |
-            EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
-        );
-
         root.addView(deviceInput);
 
         TextView durationTitle = text("Tempo de acesso", 15, true);
@@ -109,9 +86,7 @@ public class MainActivity extends Activity {
         root.addView(durationTitle);
 
         durationSpinner = new Spinner(this);
-        durationSpinner.setBackgroundColor(
-            Color.rgb(32, 32, 36)
-        );
+        durationSpinner.setBackgroundColor(Color.rgb(32, 32, 36));
 
         String[] durations = new String[] {
             "1 mês",
@@ -133,11 +108,7 @@ public class MainActivity extends Activity {
                     ViewGroup parent
                 ) {
                     return styleDurationView(
-                        super.getView(
-                            position,
-                            convertView,
-                            parent
-                        )
+                        super.getView(position, convertView, parent)
                     );
                 }
 
@@ -148,11 +119,7 @@ public class MainActivity extends Activity {
                     ViewGroup parent
                 ) {
                     return styleDurationView(
-                        super.getDropDownView(
-                            position,
-                            convertView,
-                            parent
-                        )
+                        super.getDropDownView(position, convertView, parent)
                     );
                 }
             };
@@ -160,7 +127,6 @@ public class MainActivity extends Activity {
         durationAdapter.setDropDownViewResource(
             android.R.layout.simple_spinner_dropdown_item
         );
-
         durationSpinner.setAdapter(durationAdapter);
 
         LinearLayout.LayoutParams spinnerParams =
@@ -176,7 +142,7 @@ public class MainActivity extends Activity {
         root.addView(listTitle);
 
         TextView listHelp = text(
-            "Preencha os 3 campos para a lista entrar automaticamente no aparelho após a liberação.",
+            "Preencha servidor, usuário e senha para a lista entrar automaticamente nesse MAC.",
             13,
             false
         );
@@ -187,12 +153,8 @@ public class MainActivity extends Activity {
         hostInput = field("Servidor / DNS (http://host:porta)");
         hostInput.setRawInputType(
             InputType.TYPE_CLASS_TEXT |
-            InputType.TYPE_TEXT_VARIATION_URI
-        );
-        hostInput.setImeOptions(
-            EditorInfo.IME_ACTION_NEXT |
-            EditorInfo.IME_FLAG_NO_EXTRACT_UI |
-            EditorInfo.IME_FLAG_NO_FULLSCREEN
+            InputType.TYPE_TEXT_VARIATION_URI |
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         );
 
         userInput = field("Usuário da lista");
@@ -205,7 +167,7 @@ public class MainActivity extends Activity {
         root.addView(userInput);
         root.addView(passInput);
 
-        Button grant = button("LIBERAR ACESSO");
+        Button grant = button("APLICAR NO APARELHO");
         grant.setOnClickListener(v -> grantAccess());
         root.addView(grant);
 
@@ -217,7 +179,7 @@ public class MainActivity extends Activity {
         root.addView(settingsTitle);
 
         TextView settingsHelp = text(
-            "A Chave Admin envia acesso, prazo e lista direto para o Supabase. Não precisa mais de token GitHub.",
+            "Agora só precisa da Chave Admin DarkTV. Duração e lista por MAC ficam no Supabase; token GitHub não é mais usado.",
             13,
             false
         );
@@ -255,101 +217,101 @@ public class MainActivity extends Activity {
         setContentView(scroll);
     }
 
-    private void updateAccessBackend(
-        String adminKey,
-        String deviceHash,
-        boolean active,
-        String duration,
-        String encryptedXtream
-    ) throws Exception {
+    private void grantAccess() {
+        final String device =
+            normalizeDeviceId(deviceInput.getText().toString());
 
-        HttpURLConnection c =
-            (HttpURLConnection)
-                new URL(ACCESS_URL)
-                    .openConnection();
+        final String adminKey =
+            adminKeyInput.getText().toString().trim();
 
-        c.setRequestMethod("POST");
-        c.setConnectTimeout(15000);
-        c.setReadTimeout(20000);
-        c.setDoOutput(true);
+        final String host =
+            normalizeHost(hostInput.getText().toString());
 
-        c.setRequestProperty(
-            "Content-Type",
-            "application/json; charset=utf-8"
-        );
+        final String user =
+            userInput.getText().toString().trim();
 
-        c.setRequestProperty(
-            "x-admin-key",
-            adminKey
-        );
+        final String pass =
+            passInput.getText().toString().trim();
 
-        JSONObject payload =
-            new JSONObject();
+        if (device.isEmpty()) {
+            fail("Digite o MAC / ID da TV.");
+            return;
+        }
 
-        payload.put(
-            "device_hash",
-            deviceHash
-        );
+        if (device.replace(":", "").length() != 12) {
+            fail("MAC / ID incompleto. Digite os 12 caracteres.");
+            return;
+        }
 
-        payload.put(
-            "active",
-            active
-        );
+        if (adminKey.isEmpty()) {
+            fail("Salve primeiro a Chave Admin.");
+            return;
+        }
 
-        payload.put(
-            "duration",
-            active
-                ? duration
-                : "block"
-        );
+        final String duration = selectedDuration();
+        final boolean blocking = "block".equals(duration);
+
+        final boolean hasAnyListField =
+            !host.isEmpty() || !user.isEmpty() || !pass.isEmpty();
 
         if (
-            active &&
-            encryptedXtream != null &&
-            !encryptedXtream.isEmpty()
+            !blocking &&
+            hasAnyListField &&
+            (host.isEmpty() || user.isEmpty() || pass.isEmpty())
         ) {
-            payload.put(
-                "xtream_enc",
-                encryptedXtream
-            );
+            fail("Para enviar a lista, preencha servidor, usuário e senha.");
+            return;
         }
 
-        try (OutputStream out =
-            c.getOutputStream()) {
+        final String expiresAt =
+            calculateExpiresAt(duration);
 
-            out.write(
-                payload.toString()
-                    .getBytes(StandardCharsets.UTF_8)
-            );
-        }
+        status.setText(
+            blocking
+                ? "Bloqueando acesso..."
+                : "Enviando para o Supabase..."
+        );
+        status.setTextColor(Color.rgb(250, 204, 21));
 
-        int code =
-            c.getResponseCode();
+        new Thread(() -> {
+            try {
+                String hash = sha256(device);
+                String encryptedXtream = null;
 
-        if (code != 200) {
-            String body =
-                readBody(c);
+                if (!blocking && hasAnyListField) {
+                    JSONObject xtream = new JSONObject();
+                    xtream.put("host", host);
+                    xtream.put("user", user);
+                    xtream.put("pass", pass);
 
-            if (code == 401) {
-                throw new Exception(
-                    "Chave Admin inválida."
-                );
-            }
+                    encryptedXtream =
+                        encryptConfig(xtream.toString());
+                }
 
-            throw new Exception(
-                "Backend HTTP " +
-                code + ": " + body
-            );
-        }
-    });
+                if (blocking) {
+                    updateAccessBackend(
+                        adminKey,
+                        hash,
+                        false,
+                        "block",
+                        null
+                    );
 
+                    runOnUiThread(() -> {
+                        status.setText(
+                            "Acesso bloqueado para " + device +
+                            ". O modal de pagamento volta a aparecer."
+                        );
+                        status.setTextColor(
+                            Color.rgb(248, 113, 113)
+                        );
+                    });
                     return;
                 }
 
                 /*
-                 * Pulso OFF -> ON:
-                 * faz a versão nova da TV perceber renovação
-                 * de prazo ou troca de lista.
+                 * Pequeno pulso para aparelhos já abertos perceberem
+                 * renovação/troca de lista e consultarem o Supabase de novo.
                  */
                 updateAccessBackend(
                     adminKey,
@@ -360,7 +322,7 @@ public class MainActivity extends Activity {
                 );
 
                 try {
-                    Thread.sleep(800);
+                    Thread.sleep(2300);
                 } catch (InterruptedException ignored) {}
 
                 updateAccessBackend(
@@ -382,16 +344,18 @@ public class MainActivity extends Activity {
                         " — " + expiryLabel + ".";
 
                     if (hasAnyListField) {
-                        msg += " Lista enviada para o aparelho.";
+                        msg += " Lista vinculada no Supabase.";
                     }
 
                     status.setText(msg);
-                    status.setTextColor(Color.rgb(134, 239, 172));
+                    status.setTextColor(
+                        Color.rgb(134, 239, 172)
+                    );
                 });
 
             } catch (Exception e) {
                 runOnUiThread(() ->
-                    fail("Erro ao liberar: " + e.getMessage())
+                    fail("Erro: " + e.getMessage())
                 );
             }
         }).start();
@@ -401,11 +365,9 @@ public class MainActivity extends Activity {
         int position =
             durationSpinner.getSelectedItemPosition();
 
-        if (position == 0) return "hours4";
-        if (position == 1) return "day";
-        if (position == 2) return "month";
-        if (position == 3) return "year";
-        if (position == 4) return "forever";
+        if (position == 0) return "month";
+        if (position == 1) return "year";
+        if (position == 2) return "forever";
         return "block";
     }
 
@@ -416,11 +378,7 @@ public class MainActivity extends Activity {
 
         Calendar cal = Calendar.getInstance();
 
-        if ("hours4".equals(duration)) {
-            cal.add(Calendar.HOUR_OF_DAY, 4);
-        } else if ("day".equals(duration)) {
-            cal.add(Calendar.DAY_OF_YEAR, 1);
-        } else if ("year".equals(duration)) {
+        if ("year".equals(duration)) {
             cal.add(Calendar.YEAR, 1);
         } else if ("month".equals(duration)) {
             cal.add(Calendar.MONTH, 1);
@@ -480,8 +438,6 @@ public class MainActivity extends Activity {
         return host;
     }
 
-
-
     private String encryptConfig(String plain)
         throws Exception {
 
@@ -495,9 +451,7 @@ public class MainActivity extends Activity {
         new SecureRandom().nextBytes(iv);
 
         Cipher cipher =
-            Cipher.getInstance(
-                "AES/GCM/NoPadding"
-            );
+            Cipher.getInstance("AES/GCM/NoPadding");
 
         cipher.init(
             Cipher.ENCRYPT_MODE,
@@ -507,9 +461,7 @@ public class MainActivity extends Activity {
 
         byte[] encrypted =
             cipher.doFinal(
-                plain.getBytes(
-                    StandardCharsets.UTF_8
-                )
+                plain.getBytes(StandardCharsets.UTF_8)
             );
 
         return "v1." +
@@ -528,7 +480,8 @@ public class MainActivity extends Activity {
         String adminKey,
         String deviceHash,
         boolean active,
-        String expiresAt
+        String duration,
+        String encryptedXtream
     ) throws Exception {
 
         HttpURLConnection c =
@@ -554,25 +507,21 @@ public class MainActivity extends Activity {
         JSONObject payload =
             new JSONObject();
 
+        payload.put("device_hash", deviceHash);
+        payload.put("active", active);
         payload.put(
-            "device_hash",
-            deviceHash
+            "duration",
+            active ? duration : "block"
         );
 
-        payload.put(
-            "active",
-            active
-        );
-
-        if (active && expiresAt != null) {
+        if (
+            active &&
+            encryptedXtream != null &&
+            !encryptedXtream.isEmpty()
+        ) {
             payload.put(
-                "expires_at",
-                expiresAt
-            );
-        } else if (active) {
-            payload.put(
-                "expires_at",
-                JSONObject.NULL
+                "xtream_enc",
+                encryptedXtream
             );
         }
 
@@ -585,12 +534,10 @@ public class MainActivity extends Activity {
             );
         }
 
-        int code =
-            c.getResponseCode();
+        int code = c.getResponseCode();
 
         if (code != 200) {
-            String body =
-                readBody(c);
+            String body = readBody(c);
 
             if (code == 401) {
                 throw new Exception(
@@ -604,8 +551,6 @@ public class MainActivity extends Activity {
             );
         }
     }
-
-
 
     private String readBody(
         HttpURLConnection c
@@ -631,9 +576,7 @@ public class MainActivity extends Activity {
 
         String line;
 
-        while (
-            (line = reader.readLine()) != null
-        ) {
+        while ((line = reader.readLine()) != null) {
             out.append(line);
         }
 
@@ -641,55 +584,33 @@ public class MainActivity extends Activity {
         return out.toString();
     }
 
-    private String formatDeviceInput(
+    private String normalizeDeviceId(
         String value
     ) {
-
         String raw =
             value == null
                 ? ""
-                : value.toUpperCase(
-                    Locale.US
-                );
+                : value.toUpperCase(Locale.US);
 
         String hex =
-            raw.replaceAll(
-                "[^0-9A-F]",
-                ""
-            );
+            raw.replaceAll("[^0-9A-F]", "");
 
         if (hex.length() > 12) {
-            hex =
-                hex.substring(0, 12);
+            hex = hex.substring(0, 12);
         }
 
         StringBuilder out =
             new StringBuilder();
 
-        for (
-            int i = 0;
-            i < hex.length();
-            i++
-        ) {
-            if (
-                i > 0 &&
-                i % 2 == 0
-            ) {
+        for (int i = 0; i < hex.length(); i++) {
+            if (i > 0 && i % 2 == 0) {
                 out.append(":");
             }
 
-            out.append(
-                hex.charAt(i)
-            );
+            out.append(hex.charAt(i));
         }
 
         return out.toString();
-    }
-
-    private String normalizeDeviceId(
-        String value
-    ) {
-        return formatDeviceInput(value);
     }
 
     private String sha256(
@@ -697,15 +618,11 @@ public class MainActivity extends Activity {
     ) throws Exception {
 
         MessageDigest digest =
-            MessageDigest.getInstance(
-                "SHA-256"
-            );
+            MessageDigest.getInstance("SHA-256");
 
         byte[] bytes =
             digest.digest(
-                value.getBytes(
-                    StandardCharsets.UTF_8
-                )
+                value.getBytes(StandardCharsets.UTF_8)
             );
 
         StringBuilder out =
@@ -758,11 +675,7 @@ public class MainActivity extends Activity {
     private void fail(String message) {
         status.setText(message);
         status.setTextColor(
-            Color.rgb(
-                248,
-                113,
-                113
-            )
+            Color.rgb(248, 113, 113)
         );
     }
 
@@ -771,7 +684,6 @@ public class MainActivity extends Activity {
         int sp,
         boolean bold
     ) {
-
         TextView v =
             new TextView(this);
 
@@ -792,38 +704,36 @@ public class MainActivity extends Activity {
     private EditText field(
         String hint
     ) {
-
         EditText e =
             new EditText(this);
 
         e.setHint(hint);
         e.setTextColor(Color.WHITE);
         e.setSingleLine(true);
+
+        /*
+         * Não reescreve o conteúdo enquanto o usuário digita.
+         * Isso evita o teclado voltar para letras/interromper a digitação.
+         */
         e.setRawInputType(
             InputType.TYPE_CLASS_TEXT |
             InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD |
             InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         );
+
         e.setImeOptions(
             EditorInfo.IME_ACTION_NEXT |
             EditorInfo.IME_FLAG_NO_EXTRACT_UI |
             EditorInfo.IME_FLAG_NO_FULLSCREEN |
             EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
         );
+
         e.setHintTextColor(
-            Color.rgb(
-                113,
-                113,
-                122
-            )
+            Color.rgb(113, 113, 122)
         );
 
         e.setBackgroundColor(
-            Color.rgb(
-                32,
-                32,
-                36
-            )
+            Color.rgb(32, 32, 36)
         );
 
         e.setPadding(
@@ -848,18 +758,13 @@ public class MainActivity extends Activity {
     private Button button(
         String label
     ) {
-
         Button b =
             new Button(this);
 
         b.setText(label);
         b.setTextColor(Color.WHITE);
         b.setBackgroundColor(
-            Color.rgb(
-                229,
-                9,
-                20
-            )
+            Color.rgb(229, 9, 20)
         );
 
         LinearLayout.LayoutParams p =
