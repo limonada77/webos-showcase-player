@@ -90,7 +90,7 @@ public class MainActivity extends Activity {
         sub.setPadding(0, dp(8), 0, dp(22));
         root.addView(sub);
 
-        deviceInput = field("MAC / ID do dispositivo");
+        deviceInput = field("MAC / ID (pode digitar sem :)");
         deviceInput.setSingleLine(true);
         /*
          * Entrada crua e estável: o app não reinicia a conexão com o IME
@@ -194,6 +194,16 @@ public class MainActivity extends Activity {
         root.addView(listHelp);
 
         hostInput = field("Servidor / DNS (http://host:porta)");
+        hostInput.setRawInputType(
+            InputType.TYPE_CLASS_TEXT |
+            InputType.TYPE_TEXT_VARIATION_URI
+        );
+        hostInput.setImeOptions(
+            EditorInfo.IME_ACTION_NEXT |
+            EditorInfo.IME_FLAG_NO_EXTRACT_UI |
+            EditorInfo.IME_FLAG_NO_FULLSCREEN
+        );
+
         userInput = field("Usuário da lista");
         passInput = field("Senha da lista");
         passInput.setTransformationMethod(
@@ -364,7 +374,8 @@ public class MainActivity extends Activity {
                     updateAccessBackend(
                         adminKey,
                         hash,
-                        false
+                        false,
+                        expiresAt
                     );
 
                     runOnUiThread(() -> {
@@ -386,13 +397,23 @@ public class MainActivity extends Activity {
                  * faz a versão nova da TV perceber renovação
                  * de prazo ou troca de lista.
                  */
-                updateAccessBackend(adminKey, hash, false);
+                updateAccessBackend(
+                    adminKey,
+                    hash,
+                    false,
+                    expiresAt
+                );
 
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(800);
                 } catch (InterruptedException ignored) {}
 
-                updateAccessBackend(adminKey, hash, true);
+                updateAccessBackend(
+                    adminKey,
+                    hash,
+                    true,
+                    expiresAt
+                );
 
                 final String expiryLabel =
                     "forever".equals(duration)
@@ -730,7 +751,8 @@ public class MainActivity extends Activity {
     private void updateAccessBackend(
         String adminKey,
         String deviceHash,
-        boolean active
+        boolean active,
+        String expiresAt
     ) throws Exception {
 
         HttpURLConnection c =
@@ -765,6 +787,18 @@ public class MainActivity extends Activity {
             "active",
             active
         );
+
+        if (active && expiresAt != null) {
+            payload.put(
+                "expires_at",
+                expiresAt
+            );
+        } else if (active) {
+            payload.put(
+                "expires_at",
+                JSONObject.NULL
+            );
+        }
 
         try (OutputStream out =
             c.getOutputStream()) {
