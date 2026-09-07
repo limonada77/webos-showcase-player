@@ -1127,7 +1127,6 @@
     }
 
     var qr = $("#access-qr");
-    var paymentStatus = $("#access-payment-status");
 
     if (qr && !qr.getAttribute("src")) {
       qr.src = "pix-qr.svg";
@@ -1139,11 +1138,6 @@
     }
 
     state.pixCheckoutLoading = true;
-
-    if (paymentStatus) {
-      paymentStatus.textContent =
-        "Gerando QR Code PIX vinculado a este aparelho...";
-    }
 
     fetch(
       PIX_CHECKOUT_URL,
@@ -1167,15 +1161,15 @@
         return r.json();
       })
       .then(function (data) {
+        /*
+         * Nenhum texto de status do pagamento é mostrado abaixo do QR.
+         * O estado de liberação aparece somente no #access-status
+         * (mensagem amarela na parte inferior do modal).
+         */
         if (
           data &&
           data.paid === true
         ) {
-          if (paymentStatus) {
-            paymentStatus.textContent =
-              "Pagamento confirmado. Liberando o acesso...";
-          }
-
           checkAccessNow();
           return;
         }
@@ -1192,21 +1186,11 @@
           qr.src = data.qr_data_url;
           qr.style.display = "block";
         }
-
-        if (paymentStatus) {
-          paymentStatus.textContent =
-            "Escaneie o QR Code PIX para pagar R$ 25,00. O pagamento fica vinculado ao MAC / ID exibido abaixo.";
-        }
       })
       .catch(function () {
         if (qr) {
           qr.src = "pix-qr.svg";
           qr.style.display = "block";
-        }
-
-        if (paymentStatus) {
-          paymentStatus.textContent =
-            "Checkout temporariamente indisponível. Use o QR Code PIX e tente novamente em instantes.";
         }
       })
       .then(function () {
