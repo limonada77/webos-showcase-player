@@ -850,16 +850,32 @@
             return null;
           }
 
+          var expiresAt =
+            data.expires_at
+              ? new Date(
+                  String(
+                    data.expires_at
+                  )
+                )
+              : null;
+
           var policy = {
             source: "pix",
             duration: "month",
             paidAt:
               paidAt.toISOString(),
             expiresAt:
-              addCalendarMonthsIso(
-                paidAt,
-                1
+              (
+                expiresAt &&
+                isFinite(
+                  expiresAt.getTime()
+                )
               )
+                ? expiresAt.toISOString()
+                : addCalendarMonthsIso(
+                    paidAt,
+                    1
+                  )
           };
 
           writeJsonStorage(
@@ -882,6 +898,49 @@
         });
 
     return state.pixStatusPromise;
+  }
+
+  function resolvePixAccess() {
+    return fetchPixPolicy()
+      .then(function (pixPolicy) {
+        if (!pixPolicy) {
+          var waitingPix =
+            $("#access-status");
+
+          if (waitingPix) {
+            waitingPix.textContent =
+              "Aguardando pagamento PIX...";
+          }
+
+          return null;
+        }
+
+        if (
+          !isPolicyValid(
+            pixPolicy
+          )
+        ) {
+          var pixStatus =
+            $("#access-status");
+
+          if (pixStatus) {
+            pixStatus.textContent =
+              "Acesso PIX vencido. Faça um novo pagamento.";
+          }
+
+          state.currentPolicy =
+            pixPolicy;
+
+          return null;
+        }
+
+        unlockAccess(
+          pixPolicy,
+          null
+        );
+
+        return true;
+      });
   }
 
   function resolveGrantedAccess() {
@@ -908,18 +967,14 @@
               policy
             );
 
-            var status =
-              $("#access-status");
-
-            if (status) {
-              status.textContent =
-                "Acesso vencido. Renove pelo PIX ou Admin.";
-            }
-
             state.currentPolicy =
               policy;
 
-            return null;
+            /*
+             * Um prazo do Admin vencido/bloqueado não impede
+             * que o cliente renove normalmente pelo PIX.
+             */
+            return resolvePixAccess();
           }
 
           return applyRemoteXtream(
@@ -935,51 +990,11 @@
         }
 
         /*
-         * Sem política do Admin:
-         * consulta o pagamento confirmado pelo webhook.
-         * O horário vem do Supabase/Stripe, então o mês
-         * começa no instante em que o pagamento foi aceito.
+         * Sem política válida do Admin:
+         * consulta o pagamento confirmado pelo Asaas.
+         * O mês começa no instante confirmado pelo backend.
          */
-        return fetchPixPolicy()
-          .then(function (pixPolicy) {
-            if (!pixPolicy) {
-              var waitingPix =
-                $("#access-status");
-
-              if (waitingPix) {
-                waitingPix.textContent =
-                  "Aguardando pagamento PIX...";
-              }
-
-              return null;
-            }
-
-            if (
-              !isPolicyValid(
-                pixPolicy
-              )
-            ) {
-              var pixStatus =
-                $("#access-status");
-
-              if (pixStatus) {
-                pixStatus.textContent =
-                  "Acesso PIX vencido. Faça um novo pagamento.";
-              }
-
-              state.currentPolicy =
-                pixPolicy;
-
-              return null;
-            }
-
-            unlockAccess(
-              pixPolicy,
-              null
-            );
-
-            return true;
-          });
+        return resolvePixAccess();
       })
       .then(
         function (value) {
@@ -1164,7 +1179,12 @@
 
           if (paymentStatus) {
             paymentStatus.textContent =
-              "PIX automático aguardando ativação.";
+              (
+                data &&
+                data.paid === true
+              )
+                ? "Pagamento confirmado. Liberando acesso..."
+                : "PIX automático aguardando ativação.";
           }
 
           return;
@@ -1180,7 +1200,7 @@
 
         if (paymentStatus) {
           paymentStatus.textContent =
-            "Escaneie o QR Code e pague R$ 25,00. O acesso será válido por 1 mês.";
+            "Escaneie o QR Code para pagar R$ 25,00 via PIX no Asaas. O acesso será válido por 1 mês.";
         }
       })
       .catch(function () {
