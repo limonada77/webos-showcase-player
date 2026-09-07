@@ -44,8 +44,8 @@
   var LIST_CONNECTIONS_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/list-connections";
 
-  var DEVICE_CONFIG_URL =
-    "https://api.github.com/repos/limonada77/webos-showcase-player/contents/public/device-config.json?ref=main";
+  var DEVICE_BOOTSTRAP_URL =
+    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/device-bootstrap";
 
   var CONFIG_KEY_B64 =
     "orcOggT4W+iiKh5m3/MWqYipHn29xcnjgXV7iAdETjY=";
@@ -421,15 +421,18 @@
     }
 
     return fetch(
-      DEVICE_CONFIG_URL +
-        "&ts=" + now,
+      DEVICE_BOOTSTRAP_URL,
       {
-        method: "GET",
+        method: "POST",
         cache: "no-store",
         headers: {
-          "Accept":
-            "application/vnd.github+json"
-        }
+          "Content-Type":
+            "application/json"
+        },
+        body: JSON.stringify({
+          device_hash:
+            state.accessHash
+        })
       }
     )
       .then(function (r) {
@@ -441,52 +444,37 @@
 
         return r.json();
       })
-      .then(function (payload) {
-        var encoded =
-          payload &&
-          payload.content
-            ? String(
-                payload.content
-              ).replace(/\s+/g, "")
-            : "";
+      .then(function (data) {
+        var found =
+          data && data.found === true
+            ? {
+                hash:
+                  state.accessHash,
+                active:
+                  data.granted === true,
+                duration:
+                  data.duration ||
+                  (data.expiresAt
+                    ? "month"
+                    : "forever"),
+                expiresAt:
+                  data.expiresAt ||
+                  null,
+                source:
+                  data.source ||
+                  "supabase",
+                xtream_enc:
+                  data.xtream_enc ||
+                  null
+              }
+            : null;
 
-        var data =
-          encoded
-            ? JSON.parse(
-                window.atob(encoded)
-              )
-            : { devices: [] };
-
-        var list =
-          data &&
-          Array.isArray(data.devices)
-            ? data.devices
-            : [];
-
-        var found = null;
-
-        for (
-          var i = 0;
-          i < list.length;
-          i++
-        ) {
-          var item = list[i];
-
-          if (
-            item &&
-            String(
-              item.hash || ""
-            ).toLowerCase() ===
-              state.accessHash
-          ) {
-            found = item;
-            break;
-          }
-        }
-
-        state.remoteEntryLoaded = true;
-        state.remoteEntryFetchedAt = now;
-        state.remoteEntry = found;
+        state.remoteEntryLoaded =
+          true;
+        state.remoteEntryFetchedAt =
+          now;
+        state.remoteEntry =
+          found;
 
         if (found) {
           cacheRemoteEntry(found);
@@ -499,8 +487,10 @@
           getCachedRemoteEntry();
 
         if (cached) {
-          state.remoteEntryLoaded = true;
-          state.remoteEntry = cached;
+          state.remoteEntryLoaded =
+            true;
+          state.remoteEntry =
+            cached;
           return cached;
         }
 
