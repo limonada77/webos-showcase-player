@@ -183,8 +183,8 @@ input.focused { border-color: #fff; background: #2a2a30; }
 }
 .grid-title { font-size: 34px; font-weight: 800; margin: 0 0 14px; }
 
-/* ERICKTV_GRID_SPACING_V73
- * 4 conteúdos por linha, mais separados e com margem segura na borda.
+/* ERICKTV_GRID_SPACING_V76
+ * 4 conteúdos por linha, nomes em uma linha com reticências e espaço seguro abaixo dos cards.
  */
 .grid {
   flex: 1;
