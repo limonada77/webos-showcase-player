@@ -21,7 +21,7 @@
         "rootRequired": false,
         "ipkUrl": "https://raw.githubusercontent.com/limonada77/webos-showcase-player/a4c8aec9a0c0cf4231d361d939c0a3378d190f8d/public/downloads/com.streamtv.app_1.0.0_all.ipk",
         "ipkHash": {
-          "sha256": "1c88509a56cea6864b9f1fba357d47fa969e6221dd4fb6882b43b9d68e77d8c0"
+          "sha256": "a075599ffc5326ff42e884b103185f42c1fdbcece414f29c0020c91b5ff96e3366"
         },
         "ipkSize": 1540702
       },
