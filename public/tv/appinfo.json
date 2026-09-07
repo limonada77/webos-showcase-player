@@ -10,7 +10,7 @@
   "splashBackground": "splash.png",
   "bgColor": "#08080a",
   "iconColor": "#e50914",
-  "uiRevision": 2,
+  "uiRevision": 3,
   "disableBackHistoryAPI": true,
   "supportTouchMode": "none",
   "handlesRelaunch": true,
