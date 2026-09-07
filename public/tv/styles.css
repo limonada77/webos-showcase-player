@@ -751,3 +751,199 @@ body,
 .fav-label { color: #a1a1aa; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
 .fav-title { color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 8px; line-height: 1.2; }
 .fav-box .btn { width: 100%; margin-top: 0; text-align: center; }
+
+
+/* DARKTV_TCL_ANDROID_SAFE_AREA_V1 */
+/*
+ * Ajuste exclusivo do APK Android TV.
+ * A classe android-tv-safe é adicionada pela MainActivity depois do carregamento.
+ * Evita zoom excessivo em TCL/Google TV e mantém informações dentro da safe area.
+ */
+html.android-tv-safe body {
+  zoom: 1 !important;
+}
+
+/* Mantém os elementos de navegação longe das bordas que algumas TVs recortam. */
+html.android-tv-safe .topbar {
+  padding-left: 64px;
+  padding-right: 64px;
+}
+
+html.android-tv-safe .bb-info {
+  left: 64px;
+  width: 44%;
+}
+
+html.android-tv-safe .row h2 {
+  margin-left: 64px;
+}
+
+html.android-tv-safe .row-track {
+  padding-left: 64px;
+  padding-right: 64px;
+}
+
+html.android-tv-safe .cats {
+  padding-left: 36px;
+  padding-bottom: 48px;
+}
+
+html.android-tv-safe .grid-main {
+  padding-right: 36px;
+}
+
+/* Tela de detalhe: sobe o conteúdo e reserva bordas para 720p/1080p/4K. */
+html.android-tv-safe .detail-body {
+  padding-left: 64px;
+  padding-right: 64px;
+  padding-bottom: 52px;
+}
+
+html.android-tv-safe .detail-body h1 {
+  max-width: 82%;
+}
+
+/* Player: pequena moldura preta invisível no fundo preto para evitar overscan. */
+html.android-tv-safe #video {
+  position: absolute;
+  left: 28px;
+  top: 18px;
+  width: calc(100% - 56px);
+  height: calc(100% - 36px);
+  object-fit: contain !important;
+  transform: none;
+}
+
+html.android-tv-safe .osd-top {
+  padding: 44px 68px;
+}
+
+html.android-tv-safe .osd-bottom {
+  left: 68px;
+  right: 68px;
+  bottom: 58px;
+}
+
+html.android-tv-safe .player-error {
+  left: 32px;
+  right: 32px;
+}
+
+/* Modal PIX/MAC: sempre inteiro dentro da tela da TCL. */
+html.android-tv-safe .access-gate {
+  overflow: hidden;
+}
+
+html.android-tv-safe .access-modal {
+  width: 420px;
+  max-width: calc(100% - 96px);
+  max-height: calc(100% - 64px);
+  padding: 14px 26px 16px;
+  overflow: hidden;
+}
+
+html.android-tv-safe .access-brand {
+  font-size: 25px;
+}
+
+html.android-tv-safe .access-title {
+  margin-top: 2px;
+  font-size: 14px;
+}
+
+html.android-tv-safe .access-price {
+  margin: 5px 0 7px;
+  font-size: 28px;
+}
+
+html.android-tv-safe .access-qr {
+  width: 190px;
+  max-width: 190px;
+  margin-bottom: 8px;
+}
+
+html.android-tv-safe .access-label {
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+html.android-tv-safe .access-device-box {
+  margin-top: 9px;
+  padding: 8px 10px;
+}
+
+html.android-tv-safe .access-device-id {
+  font-size: 18px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+html.android-tv-safe .access-status {
+  margin-top: 9px;
+  font-size: 13px;
+}
+
+/* TCLs que entregam viewport de 1280x720: layout ainda mais compacto na altura. */
+@media (max-height: 800px) {
+  html.android-tv-safe .detail-body {
+    padding-top: 108px;
+    padding-left: 64px;
+    padding-right: 64px;
+    padding-bottom: 38px;
+  }
+
+  html.android-tv-safe .detail-body h1 {
+    font-size: 34px;
+    margin-bottom: 7px;
+  }
+
+  html.android-tv-safe .dt-meta {
+    margin-bottom: 8px;
+  }
+
+  html.android-tv-safe .dt-desc {
+    max-width: 64%;
+    max-height: 62px;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  html.android-tv-safe .bb-actions {
+    margin-top: 12px;
+  }
+
+  html.android-tv-safe .seasons {
+    margin: 14px 0 10px;
+  }
+
+  html.android-tv-safe .episodes {
+    padding-bottom: 16px;
+  }
+
+  html.android-tv-safe .access-modal {
+    width: 400px;
+    max-height: calc(100% - 52px);
+    padding-top: 11px;
+    padding-bottom: 12px;
+  }
+
+  html.android-tv-safe .access-qr {
+    width: 172px;
+    max-width: 172px;
+    margin-bottom: 6px;
+  }
+
+  html.android-tv-safe .access-price {
+    font-size: 25px;
+  }
+
+  html.android-tv-safe .access-device-box {
+    margin-top: 7px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  html.android-tv-safe .access-status {
+    margin-top: 7px;
+  }
+}

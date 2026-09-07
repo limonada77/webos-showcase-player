@@ -69,7 +69,26 @@ public class MainActivity extends Activity {
         s.setAllowFileAccessFromFileURLs(true);
         s.setAllowUniversalAccessFromFileURLs(true);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+
+                /*
+                 * DARKTV_TCL_ANDROID_SAFE_AREA_V1
+                 *
+                 * Aplica o ajuste de safe area apenas no APK Android TV.
+                 * O mesmo HTML/CSS continua sendo usado, mas o webOS não
+                 * recebe esta classe e permanece com o layout atual.
+                 */
+                view.evaluateJavascript(
+                    "(function(){try{" +
+                    "document.documentElement.classList.add('android-tv-safe');" +
+                    "}catch(e){}})();",
+                    null
+                );
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new Bridge(), "AndroidTV");
 
