@@ -4,9 +4,14 @@
 
     <application
         android:theme="@style/AppTheme"
-        android:label="StreamTV Admin"
+        android:label="DarkTV Admin"
         android:allowBackup="false"
         android:usesCleartextTraffic="false">
+
+        <activity
+            android:name=".RegisteredDevicesActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"

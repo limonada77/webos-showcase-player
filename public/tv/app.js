@@ -41,6 +41,9 @@
   var PIX_STATUS_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-status";
 
+  var PIX_CHECKOUT_URL =
+    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-checkout";
+
   var LIST_CONNECTIONS_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/list-connections";
 
@@ -1126,16 +1129,94 @@
     var qr = $("#access-qr");
     var paymentStatus = $("#access-payment-status");
 
-    if (qr) {
+    if (qr && !qr.getAttribute("src")) {
       qr.src = "pix-qr.svg";
       qr.style.display = "block";
     }
 
-    if (paymentStatus) {
-      paymentStatus.textContent =
-        "Escaneie o QR Code PIX para pagar R$ 25,00. Sem checkout.";
+    if (state.pixCheckoutLoading) {
+      return;
     }
 
+    state.pixCheckoutLoading = true;
+
+    if (paymentStatus) {
+      paymentStatus.textContent =
+        "Gerando QR Code PIX vinculado a este aparelho...";
+    }
+
+    fetch(
+      PIX_CHECKOUT_URL,
+      {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          device_hash: state.accessHash,
+          device_id: state.accessDeviceId
+        })
+      }
+    )
+      .then(function (r) {
+        if (!r.ok) {
+          throw new Error("HTTP " + r.status);
+        }
+
+        return r.json();
+      })
+      .then(function (data) {
+        if (
+          data &&
+          data.paid === true
+        ) {
+          if (paymentStatus) {
+            paymentStatus.textContent =
+              "Pagamento confirmado. Liberando o acesso...";
+          }
+
+          checkAccessNow();
+          return;
+        }
+
+        if (
+          !data ||
+          data.ready !== true ||
+          !data.qr_data_url
+        ) {
+          throw new Error("checkout_not_ready");
+        }
+
+        if (qr) {
+          qr.src = data.qr_data_url;
+          qr.style.display = "block";
+        }
+
+        if (paymentStatus) {
+          paymentStatus.textContent =
+            "Escaneie o QR Code PIX para pagar R$ 25,00. O pagamento fica vinculado ao MAC / ID exibido abaixo.";
+        }
+      })
+      .catch(function () {
+        if (qr) {
+          qr.src = "pix-qr.svg";
+          qr.style.display = "block";
+        }
+
+        if (paymentStatus) {
+          paymentStatus.textContent =
+            "Checkout temporariamente indisponível. Use o QR Code PIX e tente novamente em instantes.";
+        }
+      })
+      .then(function () {
+        state.pixCheckoutLoading = false;
+      });
+
+    /*
+     * Mantém a fila legada como fallback. Ela NÃO é exibida
+     * na nova tela de MACs registrados do Admin.
+     */
     if (!state.pixQueueSent) {
       state.pixQueueSent = true;
 
@@ -1247,7 +1328,8 @@
     remoteEntryFetchedAt: 0,
     pixStatusFetchedAt: 0,
     pixStatusPromise: null,
-    pixQueueSent: false
+    pixQueueSent: false,
+    pixCheckoutLoading: false
   };
 
   /* ---------------- Cache rápido ---------------- */

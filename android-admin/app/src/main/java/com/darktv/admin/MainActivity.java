@@ -2,6 +2,7 @@ package com.darktv.admin;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
@@ -40,6 +41,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class MainActivity extends Activity {
 
+    private static final int REGISTERED_DEVICES_REQUEST = 7001;
+
     private static final String ACCESS_URL =
         "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/grant-access";
 
@@ -66,8 +69,48 @@ public class MainActivity extends Activity {
         root.setPadding(dp(24), dp(32), dp(24), dp(36));
         scroll.addView(root);
 
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
         TextView title = text("DarkTV Admin", 30, true);
-        root.addView(title);
+        LinearLayout.LayoutParams titleParams =
+            new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            );
+        title.setLayoutParams(titleParams);
+        header.addView(title);
+
+        Button registeredButton = new Button(this);
+        registeredButton.setText("⋮");
+        registeredButton.setTextSize(26);
+        registeredButton.setTextColor(Color.WHITE);
+        registeredButton.setBackgroundColor(Color.rgb(32, 32, 36));
+        registeredButton.setContentDescription("MACs registrados");
+        registeredButton.setOnClickListener(v -> {
+            Intent intent =
+                new Intent(
+                    MainActivity.this,
+                    RegisteredDevicesActivity.class
+                );
+
+            startActivityForResult(
+                intent,
+                REGISTERED_DEVICES_REQUEST
+            );
+        });
+
+        LinearLayout.LayoutParams menuParams =
+            new LinearLayout.LayoutParams(
+                dp(58),
+                dp(52)
+            );
+        registeredButton.setLayoutParams(menuParams);
+        header.addView(registeredButton);
+
+        root.addView(header);
 
         TextView sub = text(
             "Controle o acesso pelo Supabase e, se quiser, envie a lista Xtream direto para o aparelho.",
@@ -89,6 +132,7 @@ public class MainActivity extends Activity {
         durationSpinner.setBackgroundColor(Color.rgb(32, 32, 36));
 
         String[] durations = new String[] {
+            "4 horas",
             "1 mês",
             "1 ano",
             "Para sempre",
@@ -215,6 +259,48 @@ public class MainActivity extends Activity {
         root.addView(save);
 
         setContentView(scroll);
+    }
+
+    @Override
+    protected void onActivityResult(
+        int requestCode,
+        int resultCode,
+        Intent data
+    ) {
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        );
+
+        if (
+            requestCode == REGISTERED_DEVICES_REQUEST &&
+            resultCode == RESULT_OK &&
+            data != null
+        ) {
+            String selected =
+                data.getStringExtra(
+                    "selected_device_id"
+                );
+
+            if (
+                selected != null &&
+                !selected.trim().isEmpty()
+            ) {
+                deviceInput.setText(
+                    normalizeDeviceId(selected)
+                );
+                deviceInput.requestFocus();
+
+                status.setText(
+                    "MAC / ID selecionado: " +
+                    normalizeDeviceId(selected)
+                );
+                status.setTextColor(
+                    Color.rgb(134, 239, 172)
+                );
+            }
+        }
     }
 
     private void grantAccess() {
@@ -365,9 +451,10 @@ public class MainActivity extends Activity {
         int position =
             durationSpinner.getSelectedItemPosition();
 
-        if (position == 0) return "month";
-        if (position == 1) return "year";
-        if (position == 2) return "forever";
+        if (position == 0) return "hours4";
+        if (position == 1) return "month";
+        if (position == 2) return "year";
+        if (position == 3) return "forever";
         return "block";
     }
 
@@ -378,7 +465,9 @@ public class MainActivity extends Activity {
 
         Calendar cal = Calendar.getInstance();
 
-        if ("year".equals(duration)) {
+        if ("hours4".equals(duration)) {
+            cal.add(Calendar.HOUR_OF_DAY, 4);
+        } else if ("year".equals(duration)) {
             cal.add(Calendar.YEAR, 1);
         } else if ("month".equals(duration)) {
             cal.add(Calendar.MONTH, 1);

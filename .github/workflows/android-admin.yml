@@ -1,4 +1,4 @@
-name: StreamTV Admin Android
+name: DarkTV Admin Android
 
 on:
   workflow_dispatch:
@@ -38,13 +38,13 @@ jobs:
       - name: Preparar APK
         run: |
           mkdir -p apk-out
-          cp android-admin/app/build/outputs/apk/release/app-release.apk apk-out/StreamTV-Admin.apk
+          cp android-admin/app/build/outputs/apk/release/app-release.apk apk-out/DarkTV-Admin.apk
           ls -lh apk-out
-          sha256sum apk-out/StreamTV-Admin.apk
+          sha256sum apk-out/DarkTV-Admin.apk
 
       - name: Enviar APK
         uses: actions/upload-artifact@v4
         with:
-          name: StreamTV-Admin-Android
-          path: apk-out/StreamTV-Admin.apk
+          name: DarkTV-Admin-Android
+          path: apk-out/DarkTV-Admin.apk
           if-no-files-found: error
