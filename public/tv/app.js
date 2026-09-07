@@ -35,8 +35,8 @@
   var ACCESS_KEY =
     "sb_publishable_VUiAXt82sNXB6sDk4eeQCQ_ablSGLNc";
 
-  var PIX_CHECKOUT_URL =
-    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-checkout";
+  var PIX_QUEUE_URL =
+    "https://mabdjbzjgsjxbdhrkvmb.supabase.co/rest/v1/rpc/enqueue_pix_device";
 
   var PIX_STATUS_URL =
     "https://mabdjbzjgsjxbdhrkvmb.supabase.co/functions/v1/pix-status";
@@ -1123,90 +1123,40 @@
       return;
     }
 
-    var qr =
-      $("#access-qr");
+    var qr = $("#access-qr");
+    var paymentStatus = $("#access-payment-status");
 
-    var paymentStatus =
-      $("#access-payment-status");
+    if (qr) {
+      qr.src = "pix-qr.svg";
+      qr.style.display = "block";
+    }
 
-    fetch(
-      PIX_CHECKOUT_URL,
-      {
-        method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-        body: JSON.stringify({
-          device_hash:
-            state.accessHash
-        })
-      }
-    )
-      .then(function (r) {
-        if (!r.ok) {
-          throw new Error(
-            "HTTP " + r.status
-          );
+    if (paymentStatus) {
+      paymentStatus.textContent =
+        "Escaneie o QR Code PIX para pagar R$ 25,00. Sem checkout.";
+    }
+
+    if (!state.pixQueueSent) {
+      state.pixQueueSent = true;
+
+      fetch(
+        PIX_QUEUE_URL,
+        {
+          method: "POST",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": ACCESS_KEY,
+            "Authorization": "Bearer " + ACCESS_KEY
+          },
+          body: JSON.stringify({
+            p_hash: state.accessHash
+          })
         }
-
-        return r.json();
-      })
-      .then(function (data) {
-        if (
-          !data ||
-          data.ready !== true ||
-          !data.qr_data_url
-        ) {
-          if (qr) {
-            qr.removeAttribute(
-              "src"
-            );
-            qr.style.display =
-              "none";
-          }
-
-          if (paymentStatus) {
-            paymentStatus.textContent =
-              (
-                data &&
-                data.paid === true
-              )
-                ? "Pagamento confirmado. Liberando acesso..."
-                : "PIX automático aguardando ativação.";
-          }
-
-          return;
-        }
-
-        if (qr) {
-          qr.src =
-            data.qr_data_url;
-
-          qr.style.display =
-            "block";
-        }
-
-        if (paymentStatus) {
-          paymentStatus.textContent =
-            "Escaneie o QR Code para pagar R$ 25,00 via PIX no Asaas. O acesso será válido por 1 mês.";
-        }
-      })
-      .catch(function () {
-        if (qr) {
-          qr.removeAttribute(
-            "src"
-          );
-          qr.style.display =
-            "none";
-        }
-
-        if (paymentStatus) {
-          paymentStatus.textContent =
-            "PIX automático temporariamente indisponível.";
-        }
+      ).catch(function () {
+        state.pixQueueSent = false;
       });
+    }
   }
 
   function initAccessGate() {
@@ -1296,7 +1246,8 @@
     remoteEntryLoaded: false,
     remoteEntryFetchedAt: 0,
     pixStatusFetchedAt: 0,
-    pixStatusPromise: null
+    pixStatusPromise: null,
+    pixQueueSent: false
   };
 
   /* ---------------- Cache rápido ---------------- */
