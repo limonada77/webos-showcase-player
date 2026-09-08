@@ -1,11 +1,11 @@
 /*
- * DARKTV_ANDROID_GLOBAL_FIT_V2
+ * DARKTV_TCL_FULLBLEED_SAFE_V3
  *
- * O Android TV usa o mesmo layout-base do webOS, mas algumas TVs/boxes
- * entregam viewport/densidade com overscan e o WebView aparenta dar zoom.
- *
- * Solução: encaixar a aplicação inteira em 90% da área visível.
- * Não depende de polegadas, marca ou resolução.
+ * TCL/Android TV:
+ * - fundo ocupa 100% da tela (sem moldura preta);
+ * - interface fica dentro de uma safe area discreta;
+ * - nada depende de polegadas;
+ * - não altera webOS nem Celular.apk.
  */
 
 html.android-tv-fit,
@@ -17,66 +17,273 @@ html.android-tv-fit body {
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
-  background: #000 !important;
+  background: #08080a !important;
   zoom: 1 !important;
 }
 
 html.android-tv-fit #app {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  transform: translate(-50%, -50%) scale(0.90) !important;
-  transform-origin: 50% 50% !important;
-  overflow: hidden !important;
-  background: #08080a;
-}
-
-/* Remove qualquer compensação antiga da build TCL anterior. */
-html.android-tv-fit .topbar {
-  padding-left: 48px !important;
-  padding-right: 48px !important;
-}
-
-html.android-tv-fit .bb-info {
-  left: 48px !important;
-  width: 46% !important;
-}
-
-html.android-tv-fit .row h2 {
-  margin-left: 48px !important;
-}
-
-html.android-tv-fit .row-track {
-  padding-left: 48px !important;
-  padding-right: 48px !important;
-}
-
-html.android-tv-fit .cats {
-  padding-left: 22px !important;
-  padding-bottom: 40px !important;
-}
-
-html.android-tv-fit .grid-main {
-  padding-right: 0 !important;
-}
-
-html.android-tv-fit .detail-body {
-  padding-left: 48px !important;
-  padding-right: 48px !important;
-  padding-bottom: 40px !important;
-}
-
-/* Player acompanha o mesmo encaixe e nunca usa zoom/cover por padrão. */
-html.android-tv-fit #video {
-  position: static !important;
+  position: relative !important;
   left: auto !important;
   top: auto !important;
   width: 100% !important;
   height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  transform: none !important;
+  overflow: hidden !important;
+  background: #08080a !important;
+}
+
+/* =========================================================
+   MENU PRINCIPAL
+   O fundo continua full-screen. Só a interface ganha respiro.
+   ========================================================= */
+
+html.android-tv-fit #screen-menu .menu-bg {
+  position: absolute !important;
+  inset: 0 !important;
+  transform: none !important;
+}
+
+html.android-tv-fit #screen-menu .menu-top {
+  left: 3.5% !important;
+  right: 3.5% !important;
+  width: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+html.android-tv-fit #screen-menu .menu-tiles {
+  left: 4.5% !important;
+  right: 4.5% !important;
+  width: auto !important;
+  transform: scale(0.94) !important;
+  transform-origin: 50% 50% !important;
+}
+
+html.android-tv-fit #screen-menu .menu-strip {
+  left: 3.5% !important;
+  right: 3.5% !important;
+  width: auto !important;
+}
+
+html.android-tv-fit #screen-menu .menu-strip h2 {
+  margin-left: 0 !important;
+}
+
+html.android-tv-fit #screen-menu .menu-strip .row-track {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+html.android-tv-fit #screen-menu .menu-foot {
+  left: 3.5% !important;
+  right: 3.5% !important;
+}
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+html.android-tv-fit #screen-home .topbar {
+  left: 3.5% !important;
+  right: 3.5% !important;
+  width: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+html.android-tv-fit #screen-home .billboard,
+html.android-tv-fit #screen-home .bb-art,
+html.android-tv-fit #screen-home .bb-fade {
+  width: 100% !important;
+  transform: none !important;
+}
+
+html.android-tv-fit #screen-home .bb-info {
+  left: 5% !important;
+  width: 43% !important;
+}
+
+html.android-tv-fit #screen-home .rows {
+  left: 3.5% !important;
+  right: 3.5% !important;
+  width: auto !important;
+}
+
+html.android-tv-fit #screen-home .row h2 {
+  margin-left: 0 !important;
+}
+
+html.android-tv-fit #screen-home .row-track {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* =========================================================
+   GRADE / FILMES / SÉRIES / TV
+   O background fica full-screen; só o conteúdo é recuado.
+   ========================================================= */
+
+html.android-tv-fit #screen-grid .grid-bg {
+  position: absolute !important;
+  inset: 0 !important;
+  transform: none !important;
+}
+
+html.android-tv-fit #screen-grid .grid-wrap {
+  top: 2.5% !important;
+  left: 2.5% !important;
+  right: 2.5% !important;
+  bottom: 2.5% !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+html.android-tv-fit #screen-grid .cats {
+  width: 300px !important;
+  flex-basis: 300px !important;
+  padding-left: 12px !important;
+  padding-right: 14px !important;
+  padding-bottom: 24px !important;
+}
+
+html.android-tv-fit #screen-grid .grid-main {
+  padding-top: 22px !important;
+  padding-left: 16px !important;
+  padding-right: 8px !important;
+}
+
+html.android-tv-fit #screen-grid .grid-title {
+  font-size: 31px !important;
+}
+
+html.android-tv-fit #screen-grid .grid .card,
+html.android-tv-fit #screen-grid .grid .card.poster {
+  transform-origin: 50% 50% !important;
+}
+
+html.android-tv-fit #screen-grid .grid .card.focused {
+  transform: scale(1.025) !important;
+}
+
+/* =========================================================
+   DETALHE
+   Arte continua cobrindo a tela inteira.
+   ========================================================= */
+
+html.android-tv-fit #screen-detail .detail-art {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
+
+html.android-tv-fit #screen-detail .detail-body {
+  padding-left: 5% !important;
+  padding-right: 5% !important;
+  padding-bottom: 5% !important;
+}
+
+html.android-tv-fit #screen-detail .detail-body h1 {
+  max-width: 80% !important;
+  font-size: 37px !important;
+}
+
+html.android-tv-fit #screen-detail .dt-desc {
+  max-width: 58% !important;
+}
+
+/* =========================================================
+   BUSCA / PERFIL / LISTAS
+   ========================================================= */
+
+html.android-tv-fit #screen-search .topbar,
+html.android-tv-fit #screen-profile .topbar,
+html.android-tv-fit #screen-lists .topbar {
+  left: 3.5% !important;
+  right: 3.5% !important;
+  width: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+html.android-tv-fit #screen-search .search-box {
+  left: 4% !important;
+  right: 4% !important;
+}
+
+html.android-tv-fit #screen-search .grid {
+  left: 4% !important;
+  right: 4% !important;
+  padding-left: 0 !important;
+}
+
+html.android-tv-fit #screen-profile .profile-wrap {
+  left: 4% !important;
+  right: 4% !important;
+  bottom: 4% !important;
+}
+
+html.android-tv-fit #screen-lists .lists-wrap {
+  left: 4% !important;
+  right: 4% !important;
+  bottom: 4% !important;
+}
+
+/* =========================================================
+   PIX / MAC
+   ========================================================= */
+
+html.android-tv-fit .access-gate {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+html.android-tv-fit .access-modal {
+  width: 420px !important;
+  max-width: calc(100% - 100px) !important;
+  max-height: calc(100% - 70px) !important;
+  padding: 14px 26px 16px !important;
+  overflow: hidden !important;
+}
+
+html.android-tv-fit .access-qr {
+  width: 185px !important;
+  max-width: 185px !important;
+}
+
+html.android-tv-fit .access-device-box {
+  margin-top: 8px !important;
+  padding: 8px 10px !important;
+}
+
+html.android-tv-fit .access-device-id {
+  white-space: nowrap !important;
+  font-size: 18px !important;
+  letter-spacing: 1px !important;
+}
+
+html.android-tv-fit .access-status {
+  margin-top: 8px !important;
+  font-size: 13px !important;
+}
+
+/* =========================================================
+   PLAYER
+   Vídeo continua em tela cheia. Safe area só no OSD.
+   ========================================================= */
+
+html.android-tv-fit #screen-player,
+html.android-tv-fit #screen-player #video {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+html.android-tv-fit #video {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
   object-fit: contain !important;
   transform: none !important;
 }
@@ -95,35 +302,34 @@ html.android-tv-fit #video.fit-zoom {
 }
 
 html.android-tv-fit .osd-top {
-  padding: 34px 48px !important;
+  padding: 4.5% 5% !important;
 }
 
 html.android-tv-fit .osd-bottom {
-  left: 48px !important;
-  right: 48px !important;
-  bottom: 44px !important;
+  left: 5% !important;
+  right: 5% !important;
+  bottom: 6% !important;
 }
 
-/* O PIX/MAC também fica dentro da área segura. */
-html.android-tv-fit .access-modal {
-  width: 440px !important;
-  max-width: calc(100% - 80px) !important;
-  max-height: calc(100% - 56px) !important;
-  overflow: hidden !important;
-}
-
-html.android-tv-fit .access-device-id {
-  white-space: nowrap !important;
-  font-size: 20px !important;
-  letter-spacing: 1px !important;
-}
-
-/*
- * Se a TV já tiver viewport menor que 1280x720, reduz um pouco mais.
- * Isso protege boxes/TVs que reportam uma área lógica pequena.
- */
+/* Viewports lógicos menores: só compacta elementos, nunca o app inteiro. */
 @media (max-width: 1280px), (max-height: 720px) {
-  html.android-tv-fit #app {
-    transform: translate(-50%, -50%) scale(0.86) !important;
+  html.android-tv-fit #screen-menu .menu-tiles {
+    transform: scale(0.91) !important;
+  }
+
+  html.android-tv-fit #screen-menu .menu-top {
+    left: 4.5% !important;
+    right: 4.5% !important;
+  }
+
+  html.android-tv-fit #screen-menu .menu-strip,
+  html.android-tv-fit #screen-menu .menu-foot {
+    left: 4.5% !important;
+    right: 4.5% !important;
+  }
+
+  html.android-tv-fit #screen-detail .detail-body {
+    padding-left: 6% !important;
+    padding-right: 6% !important;
   }
 }
