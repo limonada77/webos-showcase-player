@@ -877,7 +877,7 @@ html.android-mobile .btn {
 
 /* PIX/MAC em duas zonas para caber bem no celular horizontal. */
 html.android-mobile .access-gate {
-  display: flex !important;
+  display: flex;
   align-items: center !important;
   justify-content: center !important;
   padding: 8px !important;
@@ -1391,4 +1391,31 @@ html.android-mobile .osd-btn {
   html.android-mobile .detail-body {
     padding-right: 42% !important;
   }
+}
+
+
+/* DARKTV_MOBILE_UNLOCK_GATE_FIX_V3
+ * O core libera com gate.style.display = "none".
+ * Esta regra garante que nenhum !important do layout mobile
+ * mantenha o modal visível ou bloqueando toques.
+ */
+html.android-mobile #access-gate[style*="display: none"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.android-mobile #access-gate[style*="display:none"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.android-mobile #access-gate.unlocked {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
