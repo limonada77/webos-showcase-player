@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
                 super.onPageFinished(view, url);
 
                 /*
-                 * DARKTV_TCL_ANDROID_SAFE_AREA_V1
+                 * DARKTV_ANDROID_GLOBAL_FIT_V2
                  *
                  * Aplica o ajuste de safe area apenas no APK Android TV.
                  * O mesmo HTML/CSS continua sendo usado, mas o webOS não
@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
                  */
                 view.evaluateJavascript(
                     "(function(){try{" +
-                    "document.documentElement.classList.add('android-tv-safe');" +
+                    "document.documentElement.classList.add('android-tv-fit');" +
                     "}catch(e){}})();",
                     null
                 );

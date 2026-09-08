@@ -1,0 +1,129 @@
+/*
+ * DARKTV_ANDROID_GLOBAL_FIT_V2
+ *
+ * O Android TV usa o mesmo layout-base do webOS, mas algumas TVs/boxes
+ * entregam viewport/densidade com overscan e o WebView aparenta dar zoom.
+ *
+ * Solução: encaixar a aplicação inteira em 90% da área visível.
+ * Não depende de polegadas, marca ou resolução.
+ */
+
+html.android-tv-fit,
+html.android-tv-fit body {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #000 !important;
+  zoom: 1 !important;
+}
+
+html.android-tv-fit #app {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  transform: translate(-50%, -50%) scale(0.90) !important;
+  transform-origin: 50% 50% !important;
+  overflow: hidden !important;
+  background: #08080a;
+}
+
+/* Remove qualquer compensação antiga da build TCL anterior. */
+html.android-tv-fit .topbar {
+  padding-left: 48px !important;
+  padding-right: 48px !important;
+}
+
+html.android-tv-fit .bb-info {
+  left: 48px !important;
+  width: 46% !important;
+}
+
+html.android-tv-fit .row h2 {
+  margin-left: 48px !important;
+}
+
+html.android-tv-fit .row-track {
+  padding-left: 48px !important;
+  padding-right: 48px !important;
+}
+
+html.android-tv-fit .cats {
+  padding-left: 22px !important;
+  padding-bottom: 40px !important;
+}
+
+html.android-tv-fit .grid-main {
+  padding-right: 0 !important;
+}
+
+html.android-tv-fit .detail-body {
+  padding-left: 48px !important;
+  padding-right: 48px !important;
+  padding-bottom: 40px !important;
+}
+
+/* Player acompanha o mesmo encaixe e nunca usa zoom/cover por padrão. */
+html.android-tv-fit #video {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  transform: none !important;
+}
+
+html.android-tv-fit #video.fit-cover {
+  object-fit: cover !important;
+}
+
+html.android-tv-fit #video.fit-fill {
+  object-fit: fill !important;
+}
+
+html.android-tv-fit #video.fit-zoom {
+  object-fit: contain !important;
+  transform: scale(1.12) !important;
+}
+
+html.android-tv-fit .osd-top {
+  padding: 34px 48px !important;
+}
+
+html.android-tv-fit .osd-bottom {
+  left: 48px !important;
+  right: 48px !important;
+  bottom: 44px !important;
+}
+
+/* O PIX/MAC também fica dentro da área segura. */
+html.android-tv-fit .access-modal {
+  width: 440px !important;
+  max-width: calc(100% - 80px) !important;
+  max-height: calc(100% - 56px) !important;
+  overflow: hidden !important;
+}
+
+html.android-tv-fit .access-device-id {
+  white-space: nowrap !important;
+  font-size: 20px !important;
+  letter-spacing: 1px !important;
+}
+
+/*
+ * Se a TV já tiver viewport menor que 1280x720, reduz um pouco mais.
+ * Isso protege boxes/TVs que reportam uma área lógica pequena.
+ */
+@media (max-width: 1280px), (max-height: 720px) {
+  html.android-tv-fit #app {
+    transform: translate(-50%, -50%) scale(0.86) !important;
+  }
+}

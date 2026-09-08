@@ -38,6 +38,31 @@ jobs:
           mkdir -p android-tv/app/src/main/assets/www
           cp -a public/tv/. android-tv/app/src/main/assets/www/
           rm -f android-tv/app/src/main/assets/www/appinfo.json
+
+          cp android-tv/tv-fit.css android-tv/app/src/main/assets/www/tv-fit.css
+          cp android-tv/tv-fit.js android-tv/app/src/main/assets/www/tv-fit.js
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          p = Path("android-tv/app/src/main/assets/www/index.html")
+          s = p.read_text(encoding="utf-8")
+
+          if 'href="tv-fit.css"' not in s:
+              s = s.replace(
+                  '<link rel="stylesheet" href="styles.css" />',
+                  '<link rel="stylesheet" href="styles.css" />\n    <link rel="stylesheet" href="tv-fit.css" />'
+              )
+
+          if 'src="tv-fit.js"' not in s:
+              s = s.replace(
+                  '<script src="app.js"></script>',
+                  '<script src="app.js"></script>\n    <script src="tv-fit.js"></script>'
+              )
+
+          p.write_text(s, encoding="utf-8")
+          PY
+
           echo "APP.JS:"
           sha256sum public/tv/app.js android-tv/app/src/main/assets/www/app.js
           echo "STYLES.CSS:"
