@@ -1,0 +1,52 @@
+name: IPK webOS somente
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - webos-ipk-card-gap
+    paths:
+      - "webos-only/**"
+      - ".github/workflows/webos-ipk-only.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar webOS Tools
+        run: npm install -g @webos-tools/cli
+
+      - name: Preparar build exclusiva webOS
+        run: |
+          rm -rf webos-build
+          cp -a public/tv webos-build
+          cat webos-only/card-gap.css >> webos-build/styles.css
+
+          echo "Versão:"
+          cat webos-build/appinfo.json
+
+          echo "Ajuste exclusivo:"
+          tail -n 30 webos-build/styles.css
+
+      - name: Gerar IPK
+        run: |
+          mkdir -p artifacts
+          ares-package webos-build -o artifacts
+          ls -lh artifacts
+          sha256sum artifacts/*.ipk
+
+      - name: Upload IPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DarkTV-webOS-IPK-card-gap
+          path: artifacts/*.ipk
+          if-no-files-found: error

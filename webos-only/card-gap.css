@@ -1,0 +1,10 @@
+
+/* DARKTV_WEBOS_CARD4_CLOSER_V1
+ * Ajuste exclusivo do IPK webOS desta release.
+ * Mantém tamanho e posição dos cards 1/2/3; aproxima apenas a 4ª coluna.
+ */
+#screen-grid .grid .card:nth-child(4n),
+#screen-grid .grid .card.poster:nth-child(4n) {
+  position: relative;
+  left: -14px;
+}
