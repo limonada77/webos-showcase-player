@@ -1,0 +1,704 @@
+/*
+ * DARKTV_MOBILE_V1
+ * Interface de celular usando o mesmo public/tv do DarkTV.
+ */
+
+html.android-mobile,
+html.android-mobile body {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  zoom: 1 !important;
+  font-size: 16px;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+html.android-mobile body {
+  touch-action: manipulation;
+}
+
+html.android-mobile #app,
+html.android-mobile .screen {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+html.android-mobile .focused {
+  transform: none !important;
+  box-shadow: none;
+}
+
+/* ---------- Gate PIX / MAC ---------- */
+
+html.android-mobile .access-gate {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    12px
+    max(20px, env(safe-area-inset-bottom));
+}
+
+html.android-mobile .access-modal {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: min(100%, 430px);
+  max-width: none;
+  max-height: none;
+  transform: none;
+  margin: 0 auto;
+  padding: 18px 18px 20px;
+  overflow: visible;
+  border-radius: 20px;
+}
+
+html.android-mobile .access-brand {
+  font-size: 25px;
+}
+
+html.android-mobile .access-title {
+  font-size: 14px;
+}
+
+html.android-mobile .access-price {
+  margin: 7px 0 10px;
+  font-size: 29px;
+}
+
+html.android-mobile .access-qr {
+  width: min(58vw, 220px);
+  max-width: 220px;
+  margin-bottom: 10px;
+}
+
+html.android-mobile .access-device-box {
+  margin-top: 10px;
+  padding: 10px 8px;
+}
+
+html.android-mobile .access-device-id {
+  font-size: clamp(16px, 5vw, 20px);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+html.android-mobile .access-status {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+/* ---------- Login ---------- */
+
+html.android-mobile .login-card {
+  width: auto;
+  max-width: 520px;
+  margin:
+    max(38px, env(safe-area-inset-top))
+    14px
+    20px;
+  padding: 26px 20px 24px;
+}
+
+html.android-mobile .brand {
+  font-size: 36px;
+}
+
+html.android-mobile .brand.small {
+  font-size: 23px;
+}
+
+html.android-mobile input[type="text"],
+html.android-mobile input[type="password"] {
+  height: 50px;
+  font-size: 16px;
+}
+
+/* ---------- Launcher celular ---------- */
+
+html.android-mobile #screen-menu {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.android-mobile .menu-bg {
+  position: fixed;
+}
+
+html.android-mobile .menu-top {
+  position: sticky;
+  top: 0;
+  height: 66px;
+  padding:
+    env(safe-area-inset-top)
+    14px
+    0;
+  background: rgba(7, 7, 9, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+html.android-mobile .menu-tools {
+  gap: 5px;
+  min-width: 0;
+}
+
+html.android-mobile .tool,
+html.android-mobile .tool + .tool {
+  width: 38px;
+  height: 38px;
+  margin-left: 0;
+  border-radius: 10px;
+}
+
+html.android-mobile .tool .ico {
+  width: 20px;
+  height: 20px;
+}
+
+html.android-mobile .menu-tiles {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 14px 0;
+}
+
+html.android-mobile .menu-tiles > .tile + .tile {
+  margin-left: 0;
+}
+
+html.android-mobile .tile {
+  width: 100%;
+  height: 128px;
+  border-radius: 16px;
+  gap: 10px;
+}
+
+html.android-mobile .tile-ico .ico {
+  width: 42px;
+  height: 42px;
+}
+
+html.android-mobile .tile-name {
+  font-size: 16px;
+}
+
+html.android-mobile .menu-strip {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin-top: 24px;
+  padding-bottom: 12px;
+}
+
+html.android-mobile .menu-strip h2 {
+  margin: 0 0 8px 14px;
+  font-size: 18px;
+}
+
+html.android-mobile .menu-strip .row-track,
+html.android-mobile .row-track {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 14px 16px;
+  gap: 10px;
+  transform: none !important;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+html.android-mobile .menu-foot {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  gap: 7px;
+  margin: 10px 14px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  font-size: 11px;
+}
+
+html.android-mobile .menu-foot > span {
+  margin-right: 7px;
+}
+
+/* ---------- Cards horizontais ---------- */
+
+html.android-mobile .row {
+  margin-bottom: 18px;
+}
+
+html.android-mobile .row h2 {
+  margin-left: 14px;
+  font-size: 18px;
+}
+
+html.android-mobile .card {
+  scroll-snap-align: start;
+  width: 150px;
+  height: 88px;
+  border-radius: 9px;
+}
+
+html.android-mobile .card.poster {
+  width: 112px;
+  height: 168px;
+}
+
+html.android-mobile .card .cap {
+  font-size: 11px;
+}
+
+/* ---------- Home ---------- */
+
+html.android-mobile .topbar {
+  height: 60px;
+  padding:
+    env(safe-area-inset-top)
+    12px
+    0;
+  gap: 10px;
+  overflow-x: auto;
+  background: rgba(5, 5, 7, 0.94);
+}
+
+html.android-mobile .tabs {
+  overflow-x: auto;
+  flex: 0 0 auto;
+}
+
+html.android-mobile .tab,
+html.android-mobile #btn-refresh,
+html.android-mobile #btn-logout {
+  font-size: 14px;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+html.android-mobile .billboard {
+  height: 54%;
+}
+
+html.android-mobile .bb-info {
+  left: 16px;
+  bottom: 7%;
+  width: calc(100% - 32px);
+}
+
+html.android-mobile .bb-info h1 {
+  font-size: 30px;
+}
+
+html.android-mobile .bb-info p {
+  font-size: 14px;
+  max-height: 60px;
+}
+
+html.android-mobile .bb-actions {
+  margin-top: 12px;
+}
+
+html.android-mobile .rows {
+  top: 51%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- Catálogo / gêneros ---------- */
+
+html.android-mobile .grid-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+html.android-mobile .cats {
+  width: 100%;
+  flex: 0 0 58px;
+  display: flex;
+  gap: 8px;
+  padding:
+    max(8px, env(safe-area-inset-top))
+    12px
+    6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.android-mobile .cat {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 125px;
+  max-width: 220px;
+  margin: 0;
+  padding: 9px 11px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+html.android-mobile .cat .cat-name {
+  max-width: 150px;
+}
+
+html.android-mobile .cat.focused {
+  transform: none;
+}
+
+html.android-mobile .grid-main {
+  flex: 1;
+  min-height: 0;
+  padding: 10px 12px 0;
+}
+
+html.android-mobile .grid-title {
+  margin-bottom: 8px;
+  font-size: 23px;
+}
+
+html.android-mobile #screen-grid .grid,
+html.android-mobile .grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px 10px !important;
+  align-content: start;
+  padding: 6px 0 30px !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.android-mobile .grid .card,
+html.android-mobile .grid .card.poster {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+html.android-mobile .grid .card.poster img,
+html.android-mobile .grid .card.poster .ph {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+
+html.android-mobile .grid .card:not(.poster) {
+  height: auto !important;
+}
+
+html.android-mobile .grid .card:not(.poster) img,
+html.android-mobile .grid .card:not(.poster) .ph {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 16 / 9;
+}
+
+html.android-mobile .grid .card .cap {
+  height: auto;
+  min-height: 30px;
+  padding: 7px 2px 2px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* ---------- Busca ---------- */
+
+html.android-mobile #screen-search .topbar {
+  position: absolute;
+}
+
+html.android-mobile .search-box {
+  top: 68px;
+  left: 12px;
+  right: 12px;
+}
+
+html.android-mobile .search-box input {
+  height: 48px;
+  font-size: 16px;
+}
+
+html.android-mobile #screen-search .grid {
+  top: 126px;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  padding-left: 0 !important;
+}
+
+html.android-mobile #screen-search .grid .card,
+html.android-mobile #screen-search .grid .card.poster {
+  width: 100% !important;
+}
+
+/* ---------- Detalhes ---------- */
+
+html.android-mobile #screen-detail {
+  overflow: hidden;
+}
+
+html.android-mobile .detail-art {
+  height: 38vh;
+}
+
+html.android-mobile .detail-body {
+  position: absolute;
+  inset: 0;
+  padding:
+    31vh
+    16px
+    max(28px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(0deg, var(--bg) 54%, rgba(8, 8, 10, 0.35) 82%, rgba(8, 8, 10, 0.04));
+}
+
+html.android-mobile .detail-body h1 {
+  max-width: 100%;
+  font-size: 28px;
+  line-height: 1.08;
+}
+
+html.android-mobile .dt-meta {
+  font-size: 13px;
+}
+
+html.android-mobile .dt-desc {
+  max-width: 100%;
+  max-height: none;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+html.android-mobile .detail-body .bb-actions {
+  margin-top: 14px;
+}
+
+html.android-mobile .detail-body .btn.play {
+  width: 100%;
+}
+
+html.android-mobile .seasons {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 18px 0 10px;
+  padding: 3px 0 5px;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.android-mobile .season {
+  flex: 0 0 auto;
+}
+
+html.android-mobile .episodes {
+  overflow: visible;
+  padding-bottom: 20px;
+}
+
+html.android-mobile .ep-track {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 4px 0 12px;
+  transform: none !important;
+}
+
+html.android-mobile .ep {
+  width: 100%;
+  flex: 0 0 auto;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+/* ---------- Player touch ---------- */
+
+html.android-mobile #screen-player {
+  position: fixed;
+  inset: 0;
+  background: #000;
+}
+
+html.android-mobile #video,
+html.android-mobile #video.fit-contain,
+html.android-mobile #video.fit-cover,
+html.android-mobile #video.fit-fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none !important;
+}
+
+html.android-mobile #video.fit-zoom {
+  transform: scale(1.12) !important;
+}
+
+html.android-mobile .osd-top {
+  padding:
+    max(18px, env(safe-area-inset-top))
+    14px;
+}
+
+html.android-mobile .osd-title {
+  font-size: 19px;
+}
+
+html.android-mobile .osd-bottom {
+  left: 12px;
+  right: 12px;
+  bottom: max(72px, env(safe-area-inset-bottom));
+}
+
+html.android-mobile .osd-bottom .bar,
+html.android-mobile .osd-times,
+html.android-mobile .osd-hint {
+  display: none;
+}
+
+html.android-mobile .osd-buttons {
+  justify-content: center;
+  gap: 8px;
+}
+
+html.android-mobile .osd-btn {
+  padding: 9px 13px;
+  font-size: 13px;
+}
+
+/* ---------- Perfil e listas ---------- */
+
+html.android-mobile .profile-wrap {
+  top: 72px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: block;
+  overflow-y: auto;
+}
+
+html.android-mobile .profile-card {
+  width: 100%;
+  padding: 22px 18px;
+}
+
+html.android-mobile .profile-avatar {
+  width: 82px;
+  height: 82px;
+  line-height: 82px;
+  font-size: 42px;
+}
+
+html.android-mobile .profile-info {
+  margin-top: 18px;
+}
+
+html.android-mobile .pf-row {
+  font-size: 15px;
+}
+
+html.android-mobile .pf-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+html.android-mobile .lists-wrap {
+  top: 72px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+}
+
+html.android-mobile .lists-grid {
+  display: block;
+}
+
+html.android-mobile .list-card {
+  width: 100%;
+  min-height: 0;
+  margin: 0 0 12px;
+}
+
+/* ---------- Popup favoritos ---------- */
+
+html.android-mobile .fav-box {
+  width: calc(100% - 28px);
+  max-width: 430px;
+  padding: 24px 18px;
+  border-radius: 18px;
+}
+
+html.android-mobile .fav-title {
+  font-size: 20px;
+}
+
+/* Celulares muito estreitos */
+@media (max-width: 360px) {
+  html.android-mobile .menu-tiles {
+    gap: 9px;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  html.android-mobile .tile {
+    height: 116px;
+  }
+
+  html.android-mobile .tool,
+  html.android-mobile .tool + .tool {
+    width: 34px;
+    height: 34px;
+  }
+
+  html.android-mobile .brand.small {
+    font-size: 20px;
+  }
+
+  html.android-mobile .grid-main {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+}
+
+/* Paisagem no celular */
+@media (orientation: landscape) and (max-height: 600px) {
+  html.android-mobile .menu-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  html.android-mobile .tile {
+    height: 105px;
+  }
+
+  html.android-mobile .detail-art {
+    height: 100%;
+  }
+
+  html.android-mobile .detail-body {
+    padding: 18vh 44% 20px 18px;
+    background:
+      linear-gradient(90deg, rgba(8,8,10,.97) 18%, rgba(8,8,10,.78) 55%, rgba(8,8,10,.1));
+  }
+
+  html.android-mobile .dt-desc {
+    max-height: 84px;
+    overflow: hidden;
+  }
+}

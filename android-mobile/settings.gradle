@@ -16,5 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "DarkTVMobile"
+rootProject.name = "DarkTVCelular"
 include(":app")

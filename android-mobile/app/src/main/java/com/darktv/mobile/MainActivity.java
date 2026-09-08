@@ -2,9 +2,11 @@ package com.darktv.mobile;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -20,14 +22,10 @@ import java.util.List;
 import java.util.Locale;
 
 /*
- * DarkTV Mobile
+ * DarkTV Celular
  *
- * Reutiliza exatamente o mesmo front-end de public/tv usado pela
- * versão webOS/Android TV. O workflow copia esses arquivos para
- * assets/www em cada build.
- *
- * A ponte continua chamada AndroidTV para manter compatibilidade
- * total com o app.js existente, inclusive o ID usado na liberação.
+ * Usa exatamente o mesmo public/tv do app de TV.
+ * A diferença é somente a casca Android + mobile.css/mobile.js.
  */
 public class MainActivity extends Activity {
 
@@ -39,7 +37,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        hideSystemUi();
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_FULLSCREEN |
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        );
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.BLACK);
@@ -53,11 +54,12 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setLoadWithOverviewMode(true);
-        s.setUseWideViewPort(true);
+        s.setLoadWithOverviewMode(false);
+        s.setUseWideViewPort(false);
+        s.setSupportZoom(false);
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
-        s.setSupportZoom(false);
+        s.setTextZoom(100);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
@@ -66,22 +68,27 @@ public class MainActivity extends Activity {
         s.setAllowFileAccessFromFileURLs(true);
         s.setAllowUniversalAccessFromFileURLs(true);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+
+                view.evaluateJavascript(
+                    "(function(){try{" +
+                    "document.documentElement.classList.add('android-mobile');" +
+                    "var m=document.querySelector('meta[name=viewport]');" +
+                    "if(m)m.setAttribute('content','width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover');" +
+                    "}catch(e){}})();",
+                    null
+                );
+            }
+        });
+
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new Bridge(), "AndroidTV");
 
         webView.loadUrl("file:///android_asset/www/index.html");
-    }
-
-    private void hideSystemUi() {
-        getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-        );
+        webView.requestFocus();
     }
 
     private class Bridge {
@@ -102,6 +109,29 @@ public class MainActivity extends Activity {
     }
 
     private String resolveDeviceId() {
+        SharedPreferences prefs =
+            getSharedPreferences("darktv_identity", MODE_PRIVATE);
+
+        String saved =
+            prefs.getString("stable_device_id", "");
+
+        if (
+            saved != null &&
+            saved.matches("(?i)^[0-9A-F]{2}(:[0-9A-F]{2}){5}$")
+        ) {
+            return saved.toUpperCase(Locale.US);
+        }
+
+        String discovered = discoverInitialDeviceId();
+
+        prefs.edit()
+            .putString("stable_device_id", discovered)
+            .apply();
+
+        return discovered;
+    }
+
+    private String discoverInitialDeviceId() {
         try {
             List<NetworkInterface> list =
                 Collections.list(NetworkInterface.getNetworkInterfaces());
@@ -109,8 +139,10 @@ public class MainActivity extends Activity {
             for (NetworkInterface nif : list) {
                 String name = nif.getName();
 
-                if (!"wlan0".equalsIgnoreCase(name) &&
-                    !"eth0".equalsIgnoreCase(name)) {
+                if (
+                    !"wlan0".equalsIgnoreCase(name) &&
+                    !"eth0".equalsIgnoreCase(name)
+                ) {
                     continue;
                 }
 
@@ -129,8 +161,8 @@ public class MainActivity extends Activity {
                     Settings.Secure.ANDROID_ID
                 );
 
-            if (androidId == null) {
-                androidId = "darktv-mobile";
+            if (androidId == null || androidId.trim().isEmpty()) {
+                androidId = "darktv-android-mobile";
             }
 
             MessageDigest digest =
@@ -167,29 +199,39 @@ public class MainActivity extends Activity {
         return out.toString();
     }
 
+    private void sendKey(int keyCode) {
+        if (webView == null) return;
+
+        webView.evaluateJavascript(
+            "document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:" +
+            keyCode +
+            ",which:" +
+            keyCode +
+            ",bubbles:true}))",
+            null
+        );
+    }
+
     @Override
     public void onBackPressed() {
-        if (webView != null) {
-            webView.evaluateJavascript(
-                "document.dispatchEvent(new KeyboardEvent('keydown',{keyCode:461,which:461,bubbles:true}))",
-                null
-            );
-        } else {
-            super.onBackPressed();
-        }
+        sendKey(461);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (webView != null) webView.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        hideSystemUi();
         if (webView != null) webView.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        if (webView != null) webView.onPause();
-        super.onPause();
     }
 
     @Override

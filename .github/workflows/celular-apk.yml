@@ -1,0 +1,92 @@
+name: Celular.apk
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "public/tv/**"
+      - "android-mobile/**"
+      - ".github/workflows/celular-apk.yml"
+
+jobs:
+  celular:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Preparar DarkTV para celular
+        run: |
+          rm -rf android-mobile/app/src/main/assets/www
+          mkdir -p android-mobile/app/src/main/assets/www
+          cp -a public/tv/. android-mobile/app/src/main/assets/www/
+          rm -f android-mobile/app/src/main/assets/www/appinfo.json
+
+          cp android-mobile/mobile.css android-mobile/app/src/main/assets/www/mobile.css
+          cp android-mobile/mobile.js android-mobile/app/src/main/assets/www/mobile.js
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          p = Path("android-mobile/app/src/main/assets/www/index.html")
+          s = p.read_text(encoding="utf-8")
+
+          s = s.replace(
+              'content="width=1280, initial-scale=1"',
+              'content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"'
+          )
+
+          if 'href="mobile.css"' not in s:
+              s = s.replace(
+                  '<link rel="stylesheet" href="styles.css" />',
+                  '<link rel="stylesheet" href="styles.css" />\n    <link rel="stylesheet" href="mobile.css" />'
+              )
+
+          if 'src="mobile.js"' not in s:
+              s = s.replace(
+                  '<script src="app.js"></script>',
+                  '<script src="app.js"></script>\n    <script src="mobile.js"></script>'
+              )
+
+          p.write_text(s, encoding="utf-8")
+          PY
+
+          echo "APP.JS compartilhado:"
+          sha256sum public/tv/app.js android-mobile/app/src/main/assets/www/app.js
+          echo "Modo celular:"
+          grep -n "mobile.css\|mobile.js\|device-width" android-mobile/app/src/main/assets/www/index.html
+
+      - name: Gerar Celular.apk
+        working-directory: android-mobile
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Conferir Celular.apk
+        run: |
+          mkdir -p apk-out
+          cp android-mobile/app/build/outputs/apk/release/app-release.apk apk-out/Celular.apk
+          ls -lh apk-out/Celular.apk
+          sha256sum apk-out/Celular.apk
+
+      - name: Enviar Celular.apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: Celular.apk
+          path: apk-out/Celular.apk
+          if-no-files-found: error

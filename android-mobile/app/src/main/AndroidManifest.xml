@@ -7,6 +7,7 @@
     <application
         android:theme="@style/AppTheme"
         android:label="DarkTV"
+        android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true">
@@ -15,7 +16,8 @@
             android:name=".MainActivity"
             android:label="DarkTV"
             android:launchMode="singleTask"
-            android:screenOrientation="sensorLandscape"
+            android:screenOrientation="unspecified"
+            android:resizeableActivity="true"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
             android:exported="true">
 
