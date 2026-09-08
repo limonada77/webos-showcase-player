@@ -16,7 +16,7 @@
             android:name=".MainActivity"
             android:label="DarkTV"
             android:launchMode="singleTask"
-            android:screenOrientation="unspecified"
+            android:screenOrientation="sensorLandscape"
             android:resizeableActivity="true"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
             android:exported="true">
