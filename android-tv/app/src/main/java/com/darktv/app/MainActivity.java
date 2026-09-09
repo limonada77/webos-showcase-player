@@ -8,7 +8,7 @@ import android.provider.Settings;
 import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.WindowManager;
+import android.view.WindowManager;\nimport androidx.media3.ui.PlayerView;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -32,7 +32,7 @@ import java.util.Locale;
  */
 public class MainActivity extends Activity {
 
-    private WebView webView;
+    private WebView webView;\n    private PlayerView nativePlayerView;\n    private NativePlayerController nativePlayer;
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
@@ -46,11 +46,20 @@ public class MainActivity extends Activity {
             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         );
 
-        webView = new WebView(this);
-        webView.setBackgroundColor(Color.BLACK);
+        setContentView(R.layout.activity_main);
+
+        nativePlayerView = findViewById(R.id.native_player_view);
+        webView = findViewById(R.id.webview);
+
+        webView.setBackgroundColor(Color.TRANSPARENT);
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
-        setContentView(webView);
+
+        nativePlayer = new NativePlayerController(
+            this,
+            nativePlayerView,
+            webView
+        );
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
@@ -111,6 +120,80 @@ public class MainActivity extends Activity {
                     finishAndRemoveTask();
                 }
             });
+        }
+
+        @JavascriptInterface
+        public boolean nativePlayerAvailable() {
+            return true;
+        }
+
+        @JavascriptInterface
+        public void nativePlay(
+            String url,
+            String title,
+            double resumeSeconds,
+            String kind
+        ) {
+            if (nativePlayer == null) return;
+
+            runOnUiThread(() ->
+                nativePlayer.play(
+                    url,
+                    title,
+                    resumeSeconds,
+                    kind
+                )
+            );
+        }
+
+        @JavascriptInterface
+        public void nativeStop() {
+            if (nativePlayer == null) return;
+            runOnUiThread(() -> nativePlayer.stop());
+        }
+
+        @JavascriptInterface
+        public void nativeToggle() {
+            if (nativePlayer == null) return;
+            runOnUiThread(() -> nativePlayer.toggle());
+        }
+
+        @JavascriptInterface
+        public void nativeSeekBy(double seconds) {
+            if (nativePlayer == null) return;
+            runOnUiThread(() -> nativePlayer.seekBy(seconds));
+        }
+
+        @JavascriptInterface
+        public void nativeSeekTo(double seconds) {
+            if (nativePlayer == null) return;
+            runOnUiThread(() -> nativePlayer.seekTo(seconds));
+        }
+
+        @JavascriptInterface
+        public double nativePosition() {
+            return nativePlayer != null
+                ? nativePlayer.getPositionSeconds()
+                : 0.0;
+        }
+
+        @JavascriptInterface
+        public double nativeDuration() {
+            return nativePlayer != null
+                ? nativePlayer.getDurationSeconds()
+                : 0.0;
+        }
+
+        @JavascriptInterface
+        public boolean nativeIsActive() {
+            return nativePlayer != null &&
+                nativePlayer.isActive();
+        }
+
+        @JavascriptInterface
+        public void nativeSetAspect(int mode) {
+            if (nativePlayer == null) return;
+            runOnUiThread(() -> nativePlayer.setAspect(mode));
         }
     }
 
@@ -273,6 +356,11 @@ public class MainActivity extends Activity {
      */
     @Override
     public void onBackPressed() {
+        /*
+         * O próprio JS trata o retorno do player e preserva
+         * exatamente a categoria/card de origem.
+         * destroyPlayer() chama nativeStop().
+         */
         sendKey(461);
     }
 
@@ -315,10 +403,16 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (nativePlayer != null) {
+            nativePlayer.release();
+            nativePlayer = null;
+        }
+
         if (webView != null) {
             webView.destroy();
             webView = null;
         }
+
         super.onDestroy();
     }
 }

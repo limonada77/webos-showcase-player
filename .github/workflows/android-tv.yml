@@ -41,6 +41,9 @@ jobs:
 
           cp android-tv/tv-fit.css android-tv/app/src/main/assets/www/tv-fit.css
           cp android-tv/tv-fit.js android-tv/app/src/main/assets/www/tv-fit.js
+          cp android-tv/native-player.css android-tv/app/src/main/assets/www/native-player.css
+
+          python3 android-tv/native-player-patch.py
 
           python3 <<'PY'
           from pathlib import Path
@@ -52,6 +55,12 @@ jobs:
               s = s.replace(
                   '<link rel="stylesheet" href="styles.css" />',
                   '<link rel="stylesheet" href="styles.css" />\n    <link rel="stylesheet" href="tv-fit.css" />'
+              )
+
+          if 'href="native-player.css"' not in s:
+              s = s.replace(
+                  '<link rel="stylesheet" href="tv-fit.css" />',
+                  '<link rel="stylesheet" href="tv-fit.css" />\n    <link rel="stylesheet" href="native-player.css" />'
               )
 
           if 'src="tv-fit.js"' not in s:

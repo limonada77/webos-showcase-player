@@ -1,0 +1,25 @@
+/*
+ * DARKTV_ANDROID_NATIVE_PLAYER_V1
+ *
+ * Media3/ExoPlayer fica atrás do WebView.
+ * Durante reprodução, apenas o fundo do player HTML fica transparente.
+ * O OSD, spinner e mensagens continuam sendo os mesmos do DarkTV.
+ */
+
+html.native-player-active,
+html.native-player-active body,
+html.native-player-active #app,
+html.native-player-active #screen-player {
+  background: transparent !important;
+}
+
+html.native-player-active #screen-player {
+  background-image: none !important;
+}
+
+html.native-player-active #video {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  background: transparent !important;
+}
